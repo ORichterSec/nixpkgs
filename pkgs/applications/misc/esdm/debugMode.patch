@@ -1,0 +1,52 @@
+diff --git a/frontends/cuse/esdm-cuse-random.service.in b/frontends/cuse/esdm-cuse-random.service.in
+index a55ff289284..25b7a23bbb2 100644
+--- a/frontends/cuse/esdm-cuse-random.service.in
++++ b/frontends/cuse/esdm-cuse-random.service.in
+@@ -18,7 +18,7 @@ After=esdm-server.service
+ [Service]
+ Restart=on-failure
+ RestartSec=5s
+-ExecStart=@PATH@/esdm-cuse-random -f
++ExecStart=@PATH@/esdm-cuse-random -f -v 6
+ 
+ [Install]
+ WantedBy=basic.target
+diff --git a/frontends/cuse/esdm-cuse-urandom.service.in b/frontends/cuse/esdm-cuse-urandom.service.in
+index 03a2f895198..f7f883b90df 100644
+--- a/frontends/cuse/esdm-cuse-urandom.service.in
++++ b/frontends/cuse/esdm-cuse-urandom.service.in
+@@ -18,7 +18,7 @@ After=esdm-server.service
+ [Service]
+ Restart=on-failure
+ RestartSec=5s
+-ExecStart=@PATH@/esdm-cuse-urandom -f
++ExecStart=@PATH@/esdm-cuse-urandom -f -v 6
+ 
+ [Install]
+ WantedBy=basic.target
+diff --git a/frontends/cuse/esdm-proc.service.in b/frontends/cuse/esdm-proc.service.in
+index 6e7a565951b..93df0d7e090 100644
+--- a/frontends/cuse/esdm-proc.service.in
++++ b/frontends/cuse/esdm-proc.service.in
+@@ -18,7 +18,7 @@ After=esdm-server.service
+ [Service]
+ Restart=on-failure
+ RestartSec=5s
+-ExecStart=@PATH@/esdm-proc --relabel -f -o allow_other /proc/sys/kernel/random
++ExecStart=@PATH@/esdm-proc --relabel -f -o allow_other /proc/sys/kernel/random -v 6
+ 
+ [Install]
+ WantedBy=basic.target
+diff --git a/frontends/server/esdm-server.service.in b/frontends/server/esdm-server.service.in
+index 742e023007f..f53589705e8 100644
+--- a/frontends/server/esdm-server.service.in
++++ b/frontends/server/esdm-server.service.in
+@@ -21,7 +21,7 @@ DeviceAllow=/dev/esdm r
+ DevicePolicy=strict
+ Restart=on-failure
+ RestartSec=5s
+-ExecStart=@PATH@/esdm-server -f
++ExecStart=@PATH@/esdm-server -f -vvvvvv
+ IPAddressDeny=any
+ LimitMEMLOCK=0
+ LockPersonality=yes

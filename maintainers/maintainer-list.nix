@@ -11959,6 +11959,12 @@
     githubId = 75299;
     name = "Malcolm Matalka";
   };
+  orichtersec = {
+    email = "richter-oliver@gmx.net";
+    github = "RichterOliver";
+    githubId = 135209509;
+    name = "Oliver Richter";
+  };
   orivej = {
     email = "orivej@gmx.fr";
     github = "orivej";
@@ -15868,6 +15874,12 @@
     email = "nix@henning-thielemann.de";
     github = "thielema";
     githubId = 898989;
+  };
+  thillux = {
+    name = "Markus Theil";
+    email = "theil.markus@gmail.com";
+    github = "thillux";
+    githubId = 2171995;
   };
   thilobillerbeck = {
     name = "Thilo Billerbeck";
