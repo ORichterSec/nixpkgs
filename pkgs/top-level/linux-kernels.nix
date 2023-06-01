@@ -391,6 +391,8 @@ in {
 
     v4l2loopback = callPackage ../os-specific/linux/v4l2loopback { };
 
+    esdm-es = callPackage ../os-specific/linux/esdm-es {};
+
     lttng-modules = callPackage ../os-specific/linux/lttng-modules { };
 
     broadcom_sta = callPackage ../os-specific/linux/broadcom-sta { };
