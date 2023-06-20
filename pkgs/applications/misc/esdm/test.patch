@@ -14,15 +14,19 @@ index 80c067f9eb9..f427c3b5e45 100644
   * Min required seed entropy is 128 bits covering the minimum entropy
   * requirement of SP800-131A and the German BSI's TR02102.
 diff --git a/common/meson.build b/common/meson.build
-index fc864cdf32a..6b8d01e5377 100644
+index fc864cdf32a..66096ac50b3 100644
 --- a/common/meson.build
 +++ b/common/meson.build
-@@ -34,6 +34,10 @@ conf_data.set('ESDM_HASH_SHA512', get_option('hash_sha512').enabled())
+@@ -34,6 +34,14 @@ conf_data.set('ESDM_HASH_SHA512', get_option('hash_sha512').enabled())
  conf_data.set('ESDM_HASH_SHA3_512', get_option('hash_sha3_512').enabled())
  conf_data.set('ESDM_GNUTLS', get_option('gnutls').enabled())
  
 +if (get_option('maxrandombits') >= 0)
-+	conf_data.set('ESDM_DRNG_MAX_WITHOUT_RESEED', get_option('maxrandombits'))
++	conf_data.set('EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE', get_option('maxrandombits'))
++endif
++
++if (get_option('esdm_drop_bits') >= 0)
++	conf_data.set('ESDM_DRNG_DROP_BITS_VAL', get_option('esdm_drop_bits'))
 +endif
 +
  # This option currently is not configurable!
@@ -87,26 +91,47 @@ index 286788c1697..38ec106c1de 100644
   * @brief DRNG Manager configuration: get maximum value without successful
   *	  reseed
 diff --git a/esdm/esdm_definitions.h b/esdm/esdm_definitions.h
-index 259667a6540..9257eb279e4 100644
+index 259667a6540..91cf8b25d73 100644
 --- a/esdm/esdm_definitions.h
 +++ b/esdm/esdm_definitions.h
-@@ -56,6 +56,11 @@
+@@ -56,6 +56,24 @@
   */
  #define ESDM_DRNG_RESEED_THRESH		(1<<20)
  
 +/*
 + * AIS 20/31 DRG4.10 requires at most 2^17 maybe generated until requiring reseed.
 + */
-+#define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<13)
++#ifdef EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE
++#define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE)
++#else
++#define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<17)
++#endif
 +
++/*
++ * Specified amount of bits that are to be dropped after start, before bits
++ * are sent to serve a request
++ */
++#ifdef ESDM_DRNG_DROP_BITS_VAL
++#define ESDM_DRNG_DROP_BITS_VAL 5000
++#else
++#define ESDM_DRNG_DROP_BITS_VAL 0
++#endif
  /*
   * Maximum DRNG generation operations without reseed having full entropy
   * This value defines the absolute maximum value of DRNG generation operations
 diff --git a/esdm/esdm_drng_mgr.c b/esdm/esdm_drng_mgr.c
-index a5dee7bcaf7..a99eafdca36 100644
+index a5dee7bcaf7..8b40228b8f5 100644
 --- a/esdm/esdm_drng_mgr.c
 +++ b/esdm/esdm_drng_mgr.c
-@@ -362,9 +362,12 @@ void esdm_drng_inject(struct esdm_drng *drng,
+@@ -129,6 +129,7 @@ void esdm_drng_reset(struct esdm_drng *drng)
+ 	/* Ensure reseed during next call */
+ 	atomic_set(&drng->requests, 1);
+ 	atomic_set(&drng->requests_since_fully_seeded, 0);
++	atomic_set(&drng->requests_bits, 0);
+ 	drng->last_seeded = time(NULL);
+ 	drng->fully_seeded = false;
+ 	/* Do not set force, as this flag is used for the emergency reseeding */
+@@ -362,11 +363,16 @@ void esdm_drng_inject(struct esdm_drng *drng,
  		       "%s DRNG stats since last seeding: %lu secs; generate calls: %d\n",
  		       drng_type, esdm_time_after_now(drng->last_seeded), gc);
  
@@ -115,13 +140,18 @@ index a5dee7bcaf7..a99eafdca36 100644
 +		/* Count the numbers of generate ops and bits since last fully seeded */
 +		if (fully_seeded){
  			atomic_set(&drng->requests_since_fully_seeded, 0);
-+			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "reset requested_bits\n");
+-		else
++			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "reset requested_bits (%zd) --> 0 on node (%zd)\n", drng->requests_bits, esdm_curr_node());
 +			atomic_set(&drng->requests_bits, 0);
 +		}
- 		else
++		else{
++			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "drng->fully_seeded == false\n");
  			atomic_add(&drng->requests_since_fully_seeded, gc);
++		}
  
-@@ -603,8 +606,22 @@ out:
+ 		drng->last_seeded = time(NULL);
+ 		atomic_set(&drng->requests, ESDM_DRNG_RESEED_THRESH);
+@@ -603,8 +609,22 @@ out:
  	esdm_drng_put_instances();
  }
  
@@ -138,13 +168,21 @@ index a5dee7bcaf7..a99eafdca36 100644
 +	uint32_t requested_bits = atomic_read_u32(&drng->requests_bits);
 +	if(requested_bits >= esdm_config_drng_max_requests_bits()){
 +		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "must reseed because limit for requested bits (%zd/%zd) are reached\n", requested_bits, esdm_config_drng_max_requests_bits());
-+		atomic_set(&drng->requests_bits, esdm_config_drng_max_requests_bits());
++		// atomic_set(&drng->requests_bits, esdm_config_drng_max_requests_bits());
 +		return true;
 +	}
  	return (atomic_dec_and_test(&drng->requests) ||
  		drng->force_reseed ||
  		esdm_time_after_now(drng->last_seeded +
-@@ -638,12 +655,13 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
+@@ -625,6 +645,7 @@ static bool esdm_drng_must_reseed(struct esdm_drng *drng)
+  */
+ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
+ 			     size_t outbuflen)
++//todo:maybe here discard first 5k check some bool: discarded_on_startup?
+ {
+ 	ssize_t processed = 0;
+ 	bool pr = (drng == &esdm_drng_pr) ? true : false;
+@@ -638,19 +659,46 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
  	outbuflen = min_size(outbuflen, SSIZE_MAX);
  
  	if (atomic_read_u32(&drng->requests_since_fully_seeded) >
@@ -152,6 +190,30 @@ index a5dee7bcaf7..a99eafdca36 100644
 +	    esdm_config_drng_max_wo_reseed() || atomic_read_u32(&drng->requests_bits) == esdm_config_drng_max_requests_bits())
  		esdm_unset_fully_seeded(drng);
  
++	//drop first 5k
++	if(!drng->dropped_bits_at_start){
++		ssize_t dropped = 0;
++		ssize_t current_ret = 0;
++		while(dropped < ESDM_DRNG_DROP_BITS_VAL){
++			
++			size_t drop_amount = min_size(ESDM_DRNG_MAX_REQSIZE, ESDM_DRNG_DROP_BITS_VAL - dropped);
++			current_ret = drng->drng_cb->drng_generate(drng->drng, NULL, drop_amount);
++			dropped += current_ret;
++			logger(LOGGER_DEBUG2,LOGGER_C_DRNG, "dropping: (%zd)| got: (%zd) | status: (%zd)/(%zd) bits dropped\n\n", drop_amount, current_ret, dropped, ESDM_DRNG_DROP_BITS_VAL);
++	
++		}
++		if(dropped < ESDM_DRNG_DROP_BITS_VAL){
++			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "error. somehow we still dropped less than required\n");
++		}
++		else if(dropped > ESDM_DRNG_DROP_BITS_VAL){
++			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "error. we dropped more than we wanted\n");
++		}
++		else{
++			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "dropping worked!\n");
++		}
++		drng->dropped_bits_at_start = true;
++	}
++
  	while (outbuflen) {
  		uint32_t todo = min_uint32((uint32_t)outbuflen,
  					   ESDM_DRNG_MAX_REQSIZE);
@@ -159,7 +221,16 @@ index a5dee7bcaf7..a99eafdca36 100644
  		ssize_t ret;
  
  		/* In normal operation, check whether to reseed */
-@@ -698,6 +716,16 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
+ 		if (!pr && esdm_drng_must_reseed(drng)) {
+ 			if (!esdm_pool_trylock()) {
++				logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "lock failed set force_reseed\n");
+ 				drng->force_reseed = true;
+ 			} else {
++				logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "lock successfull reseed drng\n");
+ 				esdm_drng_seed(drng);
+ 				esdm_pool_unlock();
+ 			}
+@@ -698,6 +746,16 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
  			       ret);
  			return -EFAULT;
  		}
@@ -177,10 +248,10 @@ index a5dee7bcaf7..a99eafdca36 100644
  		outbuflen -= (size_t)ret;
  
 diff --git a/esdm/esdm_drng_mgr.h b/esdm/esdm_drng_mgr.h
-index f229bf8e984..5b1297e76ae 100644
+index f229bf8e984..2a7bccb7304 100644
 --- a/esdm/esdm_drng_mgr.h
 +++ b/esdm/esdm_drng_mgr.h
-@@ -42,6 +42,7 @@ struct esdm_drng {
+@@ -42,12 +42,14 @@ struct esdm_drng {
  	const struct esdm_drng_cb *drng_cb;	/* DRNG callbacks */
  	const struct esdm_hash_cb *hash_cb;	/* Hash callbacks */
  	atomic_t requests;			/* Number of DRNG requests */
@@ -188,7 +259,14 @@ index f229bf8e984..5b1297e76ae 100644
  	atomic_t requests_since_fully_seeded;	/* Number DRNG requests since
  						 * last fully seeded
  						 */
-@@ -59,6 +60,7 @@ struct esdm_drng {
+ 	time_t last_seeded;			/* Last time it was seeded */
+ 	bool fully_seeded;			/* Is DRNG fully seeded? */
+ 	bool force_reseed;			/* Force a reseed */
++	bool dropped_bits_at_start;
+ 
+ 	mutex_t hash_lock;			/* Lock hash_cb replacement */
+ 	/* Lock write operations on DRNG state, DRNG replacement of drng_cb */
+@@ -59,10 +61,12 @@ struct esdm_drng {
  	.drng_cb			= d_cb, \
  	.hash_cb			= h_cb, \
  	.requests			= ATOMIC_INIT(ESDM_DRNG_RESEED_THRESH),\
@@ -196,7 +274,12 @@ index f229bf8e984..5b1297e76ae 100644
  	.requests_since_fully_seeded	= ATOMIC_INIT(0), \
  	.last_seeded			= 0, \
  	.fully_seeded			= false, \
-@@ -81,6 +83,7 @@ void esdm_drng_inject(struct esdm_drng *drng,
+ 	.force_reseed			= true, \
++	.dropped_bits_at_start  = false, \
+ 	.hash_lock			= MUTEX_UNLOCKED
+ 
+ struct esdm_drng *esdm_drng_init_instance(void);
+@@ -81,6 +85,7 @@ void esdm_drng_inject(struct esdm_drng *drng,
  		      bool fully_seeded, const char *drng_type);
  void esdm_drng_seed_work(void);
  void esdm_force_fully_seeded(void);
@@ -205,14 +288,17 @@ index f229bf8e984..5b1297e76ae 100644
  static inline uint32_t esdm_compress_osr(void)
  {
 diff --git a/meson_options.txt b/meson_options.txt
-index db4a2b9cf03..4b2d4e62735 100644
+index db4a2b9cf03..c17b24b015e 100644
 --- a/meson_options.txt
 +++ b/meson_options.txt
-@@ -295,6 +295,9 @@ option('hash_sha3_512', type: 'feature', value: 'disabled',
+@@ -295,6 +295,12 @@ option('hash_sha3_512', type: 'feature', value: 'disabled',
  option('gnutls', type: 'feature', value: 'disabled',
         description: 'Enable GnuTLS backend to provide cryptographic primitives')
  
 +option('maxrandombits', type: 'integer', value: 3,
++       description:  'todo description - change number')
++
++option('esdm_drop_bits', type: 'integer', value: 0,
 +       description:  'todo description - change number')
 +
  ################################################################################

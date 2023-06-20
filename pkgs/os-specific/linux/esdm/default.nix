@@ -1,19 +1,17 @@
 { lib
 , stdenv
-, fetchpatch
 , fetchFromGitHub
-, git
 , protobufc
-, pkgconfig
+, pkg-config
 , fuse3
 , meson
 , ninja
 , libselinux
 , jitterentropy
-, selinuxSupport ? false
+, selinux ? false
 , drng_hash_drbg ? true
 , drng_chacha20 ? false
-, ais2031Support ? true
+, ais2031 ? true
 , linux-devfiles ? true
 , linux-getrandom ? true
 , es_jitterRng ? true
@@ -26,13 +24,12 @@
 , hash_sha3_512 ? true
 , debugMode ? true
 , node ? false
-, maxrandombits ? "11"
+, maxrandombits ? 12
+, esdmDropBits ? 5000
 }:
 
-assert drng_hash_drbg -> !drng_chacha20;
-assert !drng_hash_drbg -> drng_chacha20;
-assert hash_sha512 -> !hash_sha3_512;
-assert !hash_sha512 -> hash_sha3_512;
+assert drng_hash_drbg != drng_chacha20;
+assert hash_sha512 != hash_sha3_512;
 
 stdenv.mkDerivation rec {
   pname = "esdm";
@@ -47,18 +44,15 @@ stdenv.mkDerivation rec {
 
   patches = [
     ./test.patch
-  ]
-  #add debug option in the ExecStart
-  ++ lib.lists.optional debugMode ./debugMode.patch
-  ;
+  ];
 
-  nativeBuildInputs = [ meson pkgconfig ninja ];
+  nativeBuildInputs = [ meson pkg-config ninja ];
   buildInputs = [ protobufc fuse3 jitterentropy ]
-    ++ lib.lists.optional selinuxSupport libselinux;
+    ++ lib.lists.optional selinux libselinux;
 
   mesonFlags = [
     (lib.strings.mesonBool "b_lto" false)
-    (lib.strings.mesonBool "ais2031" ais2031Support)
+    (lib.strings.mesonBool "ais2031" ais2031)
     (lib.strings.mesonEnable "linux-devfiles" linux-devfiles)
     (lib.strings.mesonEnable "linux-getrandom" linux-getrandom)
     (lib.strings.mesonEnable "es_jent" es_jitterRng)
@@ -69,16 +63,18 @@ stdenv.mkDerivation rec {
     (lib.strings.mesonEnable "es_hwrand" es_hwrand)
     (lib.strings.mesonEnable "hash_sha512" hash_sha512)
     (lib.strings.mesonEnable "hash_sha3_512" hash_sha3_512)
-    (lib.strings.mesonEnable "selinux" selinuxSupport)
+    (lib.strings.mesonEnable "selinux" selinux)
     (lib.strings.mesonEnable "drng_hash_drbg" drng_hash_drbg)
     (lib.strings.mesonEnable "drng_chacha20" drng_chacha20)
     (lib.strings.mesonEnable "node" node)
     (lib.strings.mesonOption "maxrandombits" maxrandombits)
+    (lib.strings.mesonOption "esdm_drop_bits" esdmDropBits)
   ];
 
-  mesonBuildType = "debug";
+  strictDeps = true;
+  mesonBuildType = "release";
 
-  preBuild = ''
+  postInstall = ''
     mkdir -p $out/addon/linux_esdm_es
     cp -r ../addon/linux_esdm_es/*.patch $out/addon/linux_esdm_es/
   '';
@@ -87,7 +83,7 @@ stdenv.mkDerivation rec {
     homepage = "https://www.chronox.de/esdm.html";
     description = "Entropy Source and DRNG Manager in user space";
     license = [ lib.licenses.gpl2Only lib.licenses.bsd3 ];
-    platforms = lib.platforms.all;
+    platforms = lib.platforms.linux;
     maintainers = with lib.maintainers; [ orichter thillux ];
   };
 }
