@@ -25,7 +25,8 @@
 , hash_sha512 ? false
 , hash_sha3_512 ? true
 , debugMode ? true
-, node ? true
+, node ? false
+, maxrandombits ? "11"
 }:
 
 assert drng_hash_drbg -> !drng_chacha20;
@@ -53,7 +54,7 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [ meson pkgconfig ninja ];
   buildInputs = [ protobufc fuse3 jitterentropy ]
-  ++ lib.lists.optional selinuxSupport libselinux;
+    ++ lib.lists.optional selinuxSupport libselinux;
 
   mesonFlags = [
     (lib.strings.mesonBool "b_lto" false)
@@ -72,8 +73,9 @@ stdenv.mkDerivation rec {
     (lib.strings.mesonEnable "drng_hash_drbg" drng_hash_drbg)
     (lib.strings.mesonEnable "drng_chacha20" drng_chacha20)
     (lib.strings.mesonEnable "node" node)
+    (lib.strings.mesonOption "maxrandombits" maxrandombits)
   ];
-  
+
   mesonBuildType = "debug";
 
   preBuild = ''

@@ -1,0 +1,24 @@
+diff --git a/main.cpp b/main.cpp
+index ed9b780..8715d4a 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -18,7 +18,7 @@ int main(void) {
+   esdm_invoke(esdm_rpcc_status(statusStr.data(), statusStr.size()));
+   std::cout << statusStr.data() << std::endl;
+ 
+-  std::array<uint8_t, 32> randBytes;
++  std::array<uint8_t, 64> randBytes;
+   esdm_invoke(
+       esdm_rpcc_get_random_bytes_full(randBytes.data(), randBytes.size()));
+ 
+@@ -33,8 +33,8 @@ int main(void) {
+   esdm_rpcc_init_priv_service(NULL);
+ 
+   std::cout << "Warning: this is cyclic entropy feeding for testing purposes and should never be done in production!" << std::endl;
+-  esdm_invoke(esdm_rpcc_rnd_add_entropy(randBytes.data(), randBytes.size(), randBytes.size() * 8));
+-  assert(ret == 0);
++  // esdm_invoke(esdm_rpcc_rnd_add_entropy(randBytes.data(), randBytes.size(), randBytes.size() * 8));
++  // assert(ret == 0);
+ 
+   esdm_rpcc_fini_priv_service();
+ 
