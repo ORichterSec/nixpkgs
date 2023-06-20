@@ -1,0 +1,220 @@
+diff --git a/addon/linux_esdm_es/esdm_definitions.h b/addon/linux_esdm_es/esdm_definitions.h
+index 80c067f9eb9..f427c3b5e45 100644
+--- a/addon/linux_esdm_es/esdm_definitions.h
++++ b/addon/linux_esdm_es/esdm_definitions.h
+@@ -63,8 +63,9 @@
+  *
+  * This value is allowed to be changed.
+  */
++#ifndef ESDM_DRNG_MAX_WITHOUT_RESEED
+ #define ESDM_DRNG_MAX_WITHOUT_RESEED	(1<<30)
+-
++#endif
+ /*
+  * Min required seed entropy is 128 bits covering the minimum entropy
+  * requirement of SP800-131A and the German BSI's TR02102.
+diff --git a/common/meson.build b/common/meson.build
+index fc864cdf32a..6b8d01e5377 100644
+--- a/common/meson.build
++++ b/common/meson.build
+@@ -34,6 +34,10 @@ conf_data.set('ESDM_HASH_SHA512', get_option('hash_sha512').enabled())
+ conf_data.set('ESDM_HASH_SHA3_512', get_option('hash_sha3_512').enabled())
+ conf_data.set('ESDM_GNUTLS', get_option('gnutls').enabled())
+ 
++if (get_option('maxrandombits') >= 0)
++	conf_data.set('ESDM_DRNG_MAX_WITHOUT_RESEED', get_option('maxrandombits'))
++endif
++
+ # This option currently is not configurable!
+ conf_data.set('CONFIG_ESDM_USE_PTHREAD', true)
+ conf_data.set('THREADING_MAX_THREADS', get_option('threading_max_threads'))
+diff --git a/esdm/esdm_config.c b/esdm/esdm_config.c
+index 129f66fd217..bdc18f8882f 100644
+--- a/esdm/esdm_config.c
++++ b/esdm/esdm_config.c
+@@ -37,6 +37,7 @@ struct esdm_config {
+ 	uint32_t esdm_es_krng_entropy_rate_bits;
+ 	uint32_t esdm_es_sched_entropy_rate_bits;
+ 	uint32_t esdm_es_hwrand_entropy_rate_bits;
++	uint32_t esdm_drgn_max_requests_bits;
+ 	uint32_t esdm_drng_max_wo_reseed;
+ 	uint32_t esdm_max_nodes;
+ 	enum esdm_config_force_fips force_fips;
+@@ -81,6 +82,11 @@ static struct esdm_config esdm_config = {
+ 	 */
+ 	.esdm_es_hwrand_entropy_rate_bits = ESDM_HWRAND_ENTROPY_RATE,
+ 
++	/*
++	 * See documentation of ESDM_HWRAND_ENTROPY_RATE
++	 */
++	.esdm_drgn_max_requests_bits = EDSM_DRNG_MAX_BITS_WITHOUT_RESEED,
++
+ 	/*
+ 	 * See documentation of ESDM_DRNG_MAX_WITHOUT_RESEED.
+ 	 */
+@@ -204,6 +210,13 @@ void esdm_config_es_hwrand_entropy_rate_set(uint32_t ent)
+ 	esdm_es_add_entropy();
+ }
+ 
++DSO_PUBLIC
++uint32_t esdm_config_drng_max_requests_bits(void)
++{
++	return esdm_config.esdm_drgn_max_requests_bits;
++}
++
++
+ DSO_PUBLIC
+ uint32_t esdm_config_drng_max_wo_reseed(void)
+ {
+diff --git a/esdm/esdm_config.h b/esdm/esdm_config.h
+index 286788c1697..38ec106c1de 100644
+--- a/esdm/esdm_config.h
++++ b/esdm/esdm_config.h
+@@ -135,6 +135,15 @@ void esdm_config_es_hwrand_entropy_rate_set(uint32_t ent);
+  */
+ uint32_t esdm_config_es_hwrand_entropy_rate(void);
+ 
++/**
++ * @brief DRNG Manager configuration: get maximum value of requested bits
++ * without reseed
++ *
++ * @return Maximum allowed number of requested bits without reseed.
++ */
++
++uint32_t esdm_config_drng_max_requests_bits(void);
++
+ /**
+  * @brief DRNG Manager configuration: get maximum value without successful
+  *	  reseed
+diff --git a/esdm/esdm_definitions.h b/esdm/esdm_definitions.h
+index 259667a6540..9257eb279e4 100644
+--- a/esdm/esdm_definitions.h
++++ b/esdm/esdm_definitions.h
+@@ -56,6 +56,11 @@
+  */
+ #define ESDM_DRNG_RESEED_THRESH		(1<<20)
+ 
++/*
++ * AIS 20/31 DRG4.10 requires at most 2^17 maybe generated until requiring reseed.
++ */
++#define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<13)
++
+ /*
+  * Maximum DRNG generation operations without reseed having full entropy
+  * This value defines the absolute maximum value of DRNG generation operations
+diff --git a/esdm/esdm_drng_mgr.c b/esdm/esdm_drng_mgr.c
+index a5dee7bcaf7..a99eafdca36 100644
+--- a/esdm/esdm_drng_mgr.c
++++ b/esdm/esdm_drng_mgr.c
+@@ -362,9 +362,12 @@ void esdm_drng_inject(struct esdm_drng *drng,
+ 		       "%s DRNG stats since last seeding: %lu secs; generate calls: %d\n",
+ 		       drng_type, esdm_time_after_now(drng->last_seeded), gc);
+ 
+-		/* Count the numbers of generate ops since last fully seeded */
+-		if (fully_seeded)
++		/* Count the numbers of generate ops and bits since last fully seeded */
++		if (fully_seeded){
+ 			atomic_set(&drng->requests_since_fully_seeded, 0);
++			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "reset requested_bits\n");
++			atomic_set(&drng->requests_bits, 0);
++		}
+ 		else
+ 			atomic_add(&drng->requests_since_fully_seeded, gc);
+ 
+@@ -603,8 +606,22 @@ out:
+ 	esdm_drng_put_instances();
+ }
+ 
++void esdm_drng_add_requests_bits(struct esdm_drng *drng, int val)
++{
++	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "current node: (%zd) | adding requests bits current: %zd | add val: %zd | cast of val: %zd\n",
++											esdm_curr_node(),drng->requests_bits, val, (uint32_t) val);
++	atomic_add(&drng->requests_bits, val);
++}
++
++//todo: here check for variable
+ static bool esdm_drng_must_reseed(struct esdm_drng *drng)
+ {
++	uint32_t requested_bits = atomic_read_u32(&drng->requests_bits);
++	if(requested_bits >= esdm_config_drng_max_requests_bits()){
++		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "must reseed because limit for requested bits (%zd/%zd) are reached\n", requested_bits, esdm_config_drng_max_requests_bits());
++		atomic_set(&drng->requests_bits, esdm_config_drng_max_requests_bits());
++		return true;
++	}
+ 	return (atomic_dec_and_test(&drng->requests) ||
+ 		drng->force_reseed ||
+ 		esdm_time_after_now(drng->last_seeded +
+@@ -638,12 +655,13 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
+ 	outbuflen = min_size(outbuflen, SSIZE_MAX);
+ 
+ 	if (atomic_read_u32(&drng->requests_since_fully_seeded) >
+-	    esdm_config_drng_max_wo_reseed())
++	    esdm_config_drng_max_wo_reseed() || atomic_read_u32(&drng->requests_bits) == esdm_config_drng_max_requests_bits())
+ 		esdm_unset_fully_seeded(drng);
+ 
+ 	while (outbuflen) {
+ 		uint32_t todo = min_uint32((uint32_t)outbuflen,
+ 					   ESDM_DRNG_MAX_REQSIZE);
++		// todo = min_uint32(todo, atomic_read_u32(&drng->requests_bits) >> 3);
+ 		ssize_t ret;
+ 
+ 		/* In normal operation, check whether to reseed */
+@@ -698,6 +716,16 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
+ 			       ret);
+ 			return -EFAULT;
+ 		}
++		
++		esdm_drng_add_requests_bits(drng, ret<<3);
++		logger(LOGGER_DEBUG2, LOGGER_C_DRNG,
++					"current node: (%zd) | requests_bits = (%zd) out of max_requests_bits = (%zd) | todo: (%zd) | ret: (%zd) <--------\n",
++					esdm_curr_node(),
++					atomic_read_u32(&drng->requests_bits),
++					EDSM_DRNG_MAX_BITS_WITHOUT_RESEED,
++					todo,
++					ret
++					);
+ 		processed += ret;
+ 		outbuflen -= (size_t)ret;
+ 
+diff --git a/esdm/esdm_drng_mgr.h b/esdm/esdm_drng_mgr.h
+index f229bf8e984..5b1297e76ae 100644
+--- a/esdm/esdm_drng_mgr.h
++++ b/esdm/esdm_drng_mgr.h
+@@ -42,6 +42,7 @@ struct esdm_drng {
+ 	const struct esdm_drng_cb *drng_cb;	/* DRNG callbacks */
+ 	const struct esdm_hash_cb *hash_cb;	/* Hash callbacks */
+ 	atomic_t requests;			/* Number of DRNG requests */
++	atomic_t requests_bits; /*Number of requested bit since last reseed*/
+ 	atomic_t requests_since_fully_seeded;	/* Number DRNG requests since
+ 						 * last fully seeded
+ 						 */
+@@ -59,6 +60,7 @@ struct esdm_drng {
+ 	.drng_cb			= d_cb, \
+ 	.hash_cb			= h_cb, \
+ 	.requests			= ATOMIC_INIT(ESDM_DRNG_RESEED_THRESH),\
++	.requests_bits		= ATOMIC_INIT(0), \
+ 	.requests_since_fully_seeded	= ATOMIC_INIT(0), \
+ 	.last_seeded			= 0, \
+ 	.fully_seeded			= false, \
+@@ -81,6 +83,7 @@ void esdm_drng_inject(struct esdm_drng *drng,
+ 		      bool fully_seeded, const char *drng_type);
+ void esdm_drng_seed_work(void);
+ void esdm_force_fully_seeded(void);
++void esdm_drng_add_requests_bits(struct esdm_drng *drng, int val);
+ 
+ static inline uint32_t esdm_compress_osr(void)
+ {
+diff --git a/meson_options.txt b/meson_options.txt
+index db4a2b9cf03..4b2d4e62735 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -295,6 +295,9 @@ option('hash_sha3_512', type: 'feature', value: 'disabled',
+ option('gnutls', type: 'feature', value: 'disabled',
+        description: 'Enable GnuTLS backend to provide cryptographic primitives')
+ 
++option('maxrandombits', type: 'integer', value: 3,
++       description:  'todo description - change number')
++
+ ################################################################################
+ # Linux Interface Configuration
+ ################################################################################

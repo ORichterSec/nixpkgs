@@ -24,7 +24,8 @@
 , es_hwrand ? true
 , hash_sha512 ? false
 , hash_sha3_512 ? true
-, debugMode ? false
+, debugMode ? true
+, node ? true
 }:
 
 assert drng_hash_drbg -> !drng_chacha20;
@@ -43,7 +44,9 @@ stdenv.mkDerivation rec {
     sha256 = "sha256-JjNmiXpIIpnQhvGt2bwD601Zn8pcoYe4aYT1WwG0Cb8=";
   };
 
-  patches = []
+  patches = [
+    ./test.patch
+  ]
   #add debug option in the ExecStart
   ++ lib.lists.optional debugMode ./debugMode.patch
   ;
@@ -68,9 +71,10 @@ stdenv.mkDerivation rec {
     (lib.strings.mesonEnable "selinux" selinuxSupport)
     (lib.strings.mesonEnable "drng_hash_drbg" drng_hash_drbg)
     (lib.strings.mesonEnable "drng_chacha20" drng_chacha20)
+    (lib.strings.mesonEnable "node" node)
   ];
   
-  mesonBuildType = "release";
+  mesonBuildType = "debug";
 
   preBuild = ''
     mkdir -p $out/addon/linux_esdm_es

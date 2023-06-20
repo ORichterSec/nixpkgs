@@ -13,7 +13,8 @@ in
     server-enable = lib.mkEnableOption (lib.mdDoc "enable option for ESDM server service") // { default = true; };
     cuse-random-enable = lib.mkEnableOption (lib.mdDoc "enable option for ESDM cuse-random service")  // { default = true; };
     cuse-urandom-enable = lib.mkEnableOption (lib.mdDoc "enable option for ESDM cuse-urandom service") // { default = true; };
-    proc-enable = lib.mkEnableOption (lib.mdDoc "enable option for ESDM proc service");
+    proc-enable = lib.mkEnableOption (lib.mdDoc "enable option for ESDM proc service") // { default = true; };
+    verbose-enable = lib.mkEnableOption (lib.mdDoc "enable verbose ExecStart for ESDM") // { default = true; };
   };
 
   config = lib.mkMerge [
@@ -63,7 +64,18 @@ in
 
     (lib.mkIf cfg.proc-enable {
       systemd.services."esdm-proc".wantedBy = [ "basic.target" ];
-    })
+      # systemd.services."esdm-proc".serviceConfig.ExecStart = lib.mkForce [''
+      #   ${cfg.package}/esdm-proc --relabel -f -o allow_other /proc/sys/kernel/random -v 6
+      # ''];
+    }) 
+    # // lib.attrsets.optionalAttrs cfg.verbose-enable {
+    #   lib.mkForce systemd.services."esdm-proc".serviceConfig.ExecStart = [''
+    #     pwd
+    #     ls ./
+    #     ${cfg.package}/esdm-proc --relabel -f -o allow_other /proc/sys/kernel/random -v 6
+    #   ''
+    #   ];
+    # })
   ];
 
   meta.maintainers = with lib.maintainers; [ orichter thillux ];
