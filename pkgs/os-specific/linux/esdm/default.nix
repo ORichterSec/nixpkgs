@@ -22,7 +22,6 @@
 , es_hwrand ? true
 , hash_sha512 ? false
 , hash_sha3_512 ? true
-, debugMode ? false
 }:
 
 assert drng_hash_drbg != drng_chacha20;

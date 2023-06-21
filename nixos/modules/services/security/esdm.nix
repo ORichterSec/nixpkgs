@@ -46,7 +46,7 @@ in
     };
     verbose = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
       description = lib.mdDoc ''
         enable verbose ExecStart for ESDM
       '';
@@ -63,7 +63,7 @@ in
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       ({
-        systemd.packages = [ pkgs.esdm ];
+        systemd.packages = [ cfg.package ];
 
         assertions = lib.lists.singleton {
           assertion = (linux_6_3 || cfg.kernelEnable) == true;
