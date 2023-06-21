@@ -384,7 +384,7 @@ in {
 
     v4l2loopback = callPackage ../os-specific/linux/v4l2loopback { };
 
-    esdm_es = callPackage ../os-specific/linux/esdm_es {};
+    esdm-es = callPackage ../os-specific/linux/esdm-es {};
 
     lttng-modules = callPackage ../os-specific/linux/lttng-modules { };
 
