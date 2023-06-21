@@ -14,7 +14,7 @@ index 80c067f9eb9..f427c3b5e45 100644
   * Min required seed entropy is 128 bits covering the minimum entropy
   * requirement of SP800-131A and the German BSI's TR02102.
 diff --git a/common/meson.build b/common/meson.build
-index fc864cdf32a..66096ac50b3 100644
+index fc864cdf32a..64a4623de8e 100644
 --- a/common/meson.build
 +++ b/common/meson.build
 @@ -34,6 +34,14 @@ conf_data.set('ESDM_HASH_SHA512', get_option('hash_sha512').enabled())
@@ -23,10 +23,6 @@ index fc864cdf32a..66096ac50b3 100644
  
 +if (get_option('maxrandombits') >= 0)
 +	conf_data.set('EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE', get_option('maxrandombits'))
-+endif
-+
-+if (get_option('esdm_drop_bits') >= 0)
-+	conf_data.set('ESDM_DRNG_DROP_BITS_VAL', get_option('esdm_drop_bits'))
 +endif
 +
  # This option currently is not configurable!
@@ -91,20 +87,20 @@ index 286788c1697..38ec106c1de 100644
   * @brief DRNG Manager configuration: get maximum value without successful
   *	  reseed
 diff --git a/esdm/esdm_definitions.h b/esdm/esdm_definitions.h
-index 259667a6540..91cf8b25d73 100644
+index 259667a6540..ece4cee5115 100644
 --- a/esdm/esdm_definitions.h
 +++ b/esdm/esdm_definitions.h
-@@ -56,6 +56,24 @@
+@@ -56,6 +56,15 @@
   */
  #define ESDM_DRNG_RESEED_THRESH		(1<<20)
  
 +/*
 + * AIS 20/31 DRG4.10 requires at most 2^17 maybe generated until requiring reseed.
 + */
-+#ifdef EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE
-+#define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE)
++#ifndef EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE
++#define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<13)
 +#else
-+#define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<17)
++#define EDSM_DRNG_MAX_BITS_WITHOUT_RESEED (1<<EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE)
 +#endif
 +
 +/*
@@ -120,7 +116,7 @@ index 259667a6540..91cf8b25d73 100644
   * Maximum DRNG generation operations without reseed having full entropy
   * This value defines the absolute maximum value of DRNG generation operations
 diff --git a/esdm/esdm_drng_mgr.c b/esdm/esdm_drng_mgr.c
-index a5dee7bcaf7..8b40228b8f5 100644
+index a5dee7bcaf7..9c3fa2b1f6b 100644
 --- a/esdm/esdm_drng_mgr.c
 +++ b/esdm/esdm_drng_mgr.c
 @@ -129,6 +129,7 @@ void esdm_drng_reset(struct esdm_drng *drng)
@@ -174,15 +170,7 @@ index a5dee7bcaf7..8b40228b8f5 100644
  	return (atomic_dec_and_test(&drng->requests) ||
  		drng->force_reseed ||
  		esdm_time_after_now(drng->last_seeded +
-@@ -625,6 +645,7 @@ static bool esdm_drng_must_reseed(struct esdm_drng *drng)
-  */
- static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
- 			     size_t outbuflen)
-+//todo:maybe here discard first 5k check some bool: discarded_on_startup?
- {
- 	ssize_t processed = 0;
- 	bool pr = (drng == &esdm_drng_pr) ? true : false;
-@@ -638,19 +659,46 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
+@@ -638,19 +658,22 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
  	outbuflen = min_size(outbuflen, SSIZE_MAX);
  
  	if (atomic_read_u32(&drng->requests_since_fully_seeded) >
@@ -230,7 +218,7 @@ index a5dee7bcaf7..8b40228b8f5 100644
  				esdm_drng_seed(drng);
  				esdm_pool_unlock();
  			}
-@@ -698,6 +746,16 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
+@@ -698,6 +721,16 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
  			       ret);
  			return -EFAULT;
  		}
