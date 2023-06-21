@@ -16210,6 +16210,12 @@
     github = "thielema";
     githubId = 898989;
   };
+  thillux = {
+    name = "Markus Theil";
+    email = "theil.markus@gmail.com";
+    github = "thillux";
+    githubId = 2171995;
+  };
   thilobillerbeck = {
     name = "Thilo Billerbeck";
     email = "thilo.billerbeck@officerent.de";
