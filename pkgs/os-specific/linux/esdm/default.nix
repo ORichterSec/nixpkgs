@@ -72,7 +72,7 @@ stdenv.mkDerivation rec {
   ];
 
   strictDeps = true;
-  mesonBuildType = "release";
+  mesonBuildType = "debug";
 
   postInstall = ''
     mkdir -p $out/addon/linux_esdm_es
