@@ -69,8 +69,8 @@ stdenv.mkDerivation rec {
   mesonBuildType = "release";
 
   postInstall = ''
-    mkdir -p $out/addon/linux_esdm_es
-    cp -r ../addon/linux_esdm_es/*.patch $out/addon/linux_esdm_es/
+    mkdir -p $out/share/linux_esdm_es
+    cp -r ../addon/linux_esdm_es/*.patch $out/share/linux_esdm_es/
   '';
 
   meta = {

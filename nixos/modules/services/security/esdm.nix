@@ -83,11 +83,11 @@ in
           ++ lib.lists.optionals linux_6_3 [
           {
             name = "esdm_sched_es_hook";
-            patch = "${cfg.package}/addon/linux_esdm_es/0001-ESDM-scheduler-entropy-source-hooks_6.4.patch";
+            patch = "${cfg.package}/share/linux_esdm_es/0001-ESDM-scheduler-entropy-source-hooks_6.4.patch";
           }
           {
             name = "esdm_inter_es_hook";
-            patch = "${cfg.package}/addon/linux_esdm_es/0002-ESDM-interrupt-entropy-source-hooks_6.4.patch";
+            patch = "${cfg.package}/share/linux_esdm_es/0002-ESDM-interrupt-entropy-source-hooks_6.4.patch";
           }
         ];
       })
