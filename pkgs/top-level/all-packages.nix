@@ -26968,6 +26968,8 @@ with pkgs;
 
   erofs-utils = callPackage ../os-specific/linux/erofs-utils { };
 
+  esdm = callPackage ../os-specific/linux/esdm { };
+
   evdev-proto = callPackage ../os-specific/bsd/freebsd/evdev-proto { };
 
   fscryptctl = callPackage ../os-specific/linux/fscryptctl { };
@@ -40961,5 +40963,4 @@ with pkgs;
 
   charasay = callPackage ../tools/misc/charasay { };
 
-  esdm = callPackage ../os-specific/linux/esdm { };
 }

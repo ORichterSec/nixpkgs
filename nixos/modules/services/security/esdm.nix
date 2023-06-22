@@ -20,8 +20,8 @@ in
       type = lib.types.bool;
       default = true;
       description = lib.mdDoc ''
-        Enable option for ESDM server service. If serverEnable == false, then the esdm-server 
-        will not start. Also the subsequent services esdm-cuse-random, esdm-cuse-urandom 
+        Enable option for ESDM server service. If serverEnable == false, then the esdm-server
+        will not start. Also the subsequent services esdm-cuse-random, esdm-cuse-urandom
         and esdm-proc will not start as these have the entry Want=esdm-server.service.
       '';
     };
