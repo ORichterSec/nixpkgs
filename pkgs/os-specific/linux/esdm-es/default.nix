@@ -1,15 +1,10 @@
-{ lib, stdenv, fetchFromGitHub, kernel, kmod }:
+{ lib, stdenv, fetchFromGitHub, kernel, kmod, esdm }:
 
 stdenv.mkDerivation rec {
-  pname = "esdm_es";
+  pname = "esdm-es";
   version = "unstable-2023-06-19-${kernel.version}";
 
-  src = fetchFromGitHub {
-    owner = "smuellerdd";
-    repo = "esdm";
-    rev = "c7b717bbf353be84afefafba3f5a9312f9a619b0";
-    hash = "sha256-JjNmiXpIIpnQhvGt2bwD601Zn8pcoYe4aYT1WwG0Cb8=";
-  };
+  src = esdm.src;
 
   sourceRoot = "source/addon/linux_esdm_es";
 

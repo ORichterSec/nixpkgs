@@ -9,13 +9,7 @@ in
   options.services.esdm = {
     enable = lib.mkEnableOption (lib.mdDoc "ESDM service configuration");
     package = lib.mkPackageOptionMD pkgs "esdm" { };
-    kernelEnable = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = lib.mdDoc ''
-        enable ESDM kernel module
-      '';
-    };
+    kernelSupportEnable = lib.mkEnableOption (lib.mdDoc "Enable kernel support for the scheduler- and interrupt-entropy-source.");
     serverEnable = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -73,11 +67,11 @@ in
         systemd.packages = [ cfg.package ];
 
         assertions = lib.lists.singleton {
-          assertion = linux_6_3 || cfg.kernelEnable;
+          assertion = linux_6_3 || cfg.kernelSupportEnable;
           message = "Expected kernel-version >= 6.3. got kernel-version:${kernelVersion}";
         };
       })
-      (lib.mkIf cfg.kernelEnable {
+      (lib.mkIf cfg.kernelSupportEnable {
         boot.extraModulePackages = [ config.boot.kernelPackages.esdm-es.out ];
         boot.extraModprobeConfig = ''
           options esdm-es esdm_hash_name=${cfg.esdmHashName}
