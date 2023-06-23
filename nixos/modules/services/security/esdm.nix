@@ -14,42 +14,49 @@ in
       type = lib.types.bool;
       default = true;
       description = lib.mdDoc ''
-        enable option for ESDM server service
+        Enable option for ESDM server service. If serverEnable == false, then the esdm-server
+        will not start. Also the subsequent services esdm-cuse-random, esdm-cuse-urandom
+        and esdm-proc will not start as these have the entry Want=esdm-server.service.
       '';
     };
     cuseRandomEnable = lib.mkOption {
       type = lib.types.bool;
       default = true;
       description = lib.mdDoc ''
-        enable option for ESDM cuse-random service
+        Enable option for ESDM cuse-random service. Determines if the esdm-cuse-random.service
+        is started.
       '';
     };
     cuseUrandomEnable = lib.mkOption {
       type = lib.types.bool;
       default = true;
       description = lib.mdDoc ''
-        enable option for ESDM cuse-urandom service
+        Enable option for ESDM cuse-urandom service. Determines if the esdm-cuse-urandom.service
+        is started.
       '';
     };
     procEnable = lib.mkOption {
       type = lib.types.bool;
       default = true;
       description = lib.mdDoc ''
-        enable option for ESDM proc service
+        Enable option for ESDM proc service. Determines if the esdm-proc.service
+        is started.
       '';
     };
     verbose = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
       description = lib.mdDoc ''
-        enable verbose ExecStart for ESDM
+        Enable verbose ExecStart for ESDM. If verbose == true, then the corresponding "ExecStart"
+        values of the 4 aforementioned services are overwritten with the option
+        for the highest verbosity.
       '';
     };
     esdmHashName = lib.mkOption {
       type = lib.types.str;
       default = "sha3-512";
       description = lib.mdDoc ''
-        hash configration of the kernel module esdm_es
+        Set the hash configration of the kernel module esdm-es.
       '';
     };
   };
@@ -57,30 +64,30 @@ in
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       ({
-        systemd.packages = [ pkgs.esdm ];
+        systemd.packages = [ cfg.package ];
 
         assertions = lib.lists.singleton {
-          assertion = (linux_6_3 || cfg.kernelSupportEnable) == true;
+          assertion = linux_6_3 || cfg.kernelSupportEnable;
           message = "Expected kernel-version >= 6.3. got kernel-version:${kernelVersion}";
         };
       })
       (lib.mkIf cfg.kernelSupportEnable {
-        boot.extraModulePackages = [ config.boot.kernelPackages.esdm_es.out ];
+        boot.extraModulePackages = [ config.boot.kernelPackages.esdm-es.out ];
         boot.extraModprobeConfig = ''
-          options esdm_es esdm_hash_name=${cfg.esdmHashName}
+          options esdm-es esdm_hash_name=${cfg.esdmHashName}
         '';
-        boot.kernelModules = [ "esdm_es" ];
+        boot.kernelModules = [ "esdm-es" ];
 
         #patch kernel (works for kernel version 6.3)
         boot.kernelPatches = [ ]
           ++ lib.lists.optionals linux_6_3 [
           {
             name = "esdm_sched_es_hook";
-            patch = "${cfg.package}/addon/linux_esdm_es/0001-ESDM-scheduler-entropy-source-hooks_6.4.patch";
+            patch = "${cfg.package}/share/linux_esdm_es/0001-ESDM-scheduler-entropy-source-hooks_6.4.patch";
           }
           {
             name = "esdm_inter_es_hook";
-            patch = "${cfg.package}/addon/linux_esdm_es/0002-ESDM-interrupt-entropy-source-hooks_6.4.patch";
+            patch = "${cfg.package}/share/linux_esdm_es/0002-ESDM-interrupt-entropy-source-hooks_6.4.patch";
           }
         ];
       })
