@@ -117,7 +117,7 @@ index 259667a6540..bf0d995931f 100644
   * Maximum DRNG generation operations without reseed having full entropy
   * This value defines the absolute maximum value of DRNG generation operations
 diff --git a/esdm/esdm_drng_mgr.c b/esdm/esdm_drng_mgr.c
-index a5dee7bcaf7..1d4371d617d 100644
+index a5dee7bcaf7..359687c9bf0 100644
 --- a/esdm/esdm_drng_mgr.c
 +++ b/esdm/esdm_drng_mgr.c
 @@ -129,6 +129,7 @@ void esdm_drng_reset(struct esdm_drng *drng)
@@ -157,18 +157,19 @@ index a5dee7bcaf7..1d4371d617d 100644
  	struct entropy_buf seedbuf __aligned(ESDM_KCAPI_ALIGN),
  			   collected_seedbuf;
  	uint32_t collected_entropy = 0;
-@@ -403,6 +411,30 @@ static uint32_t esdm_drng_seed_es_nolock(struct esdm_drng *drng, bool init_ops,
+@@ -403,6 +411,31 @@ static uint32_t esdm_drng_seed_es_nolock(struct esdm_drng *drng, bool init_ops,
  	 */
  	memset(&seedbuf, 0, sizeof(seedbuf));
  
 +	logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "hit function esdm_drng_seed_es_nolock | drng->dropped_bits_at_start == %zd <------------\n", drng->dropped_bits_at_start);
 +	//drop the bits first if this is the first time seeding the drng
 +	if(!drng->dropped_bits_at_start) {
-+		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "test\n");
 +		struct entropy_buf dropbuf;
 +		uint32_t dropped_entropy = 0;
++		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "Dropped entropy set to:%zd | ESDM_DRNG_DROP_BITS_VAL: %zd | test EDSM_DRNG_MAX_BITS_WITHOUT_RESEED: %zd | EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE: %zd \n", dropped_entropy, ESDM_DRNG_DROP_BITS_VAL, EDSM_DRNG_MAX_BITS_WITHOUT_RESEED, EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE);
 +		while(dropped_entropy < ESDM_DRNG_DROP_BITS_VAL){
 +			//fetch the entropy into our dropbuf
++			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "Hit inner loop\n");
 +			esdm_fill_seed_buffer(&dropbuf, ESDM_DRNG_DROP_BITS_VAL, true);
 +			uint32_t current_ent;
 +			current_ent = esdm_entropy_rate_eb(&dropbuf);
@@ -188,7 +189,7 @@ index a5dee7bcaf7..1d4371d617d 100644
  	do {
  		/* Count the number of ES which delivered entropy */
  		num_es_delivered = 0;
-@@ -603,8 +635,21 @@ out:
+@@ -603,8 +636,21 @@ out:
  	esdm_drng_put_instances();
  }
  
@@ -210,7 +211,7 @@ index a5dee7bcaf7..1d4371d617d 100644
  	return (atomic_dec_and_test(&drng->requests) ||
  		drng->force_reseed ||
  		esdm_time_after_now(drng->last_seeded +
-@@ -638,19 +683,20 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
+@@ -638,19 +684,20 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
  	outbuflen = min_size(outbuflen, SSIZE_MAX);
  
  	if (atomic_read_u32(&drng->requests_since_fully_seeded) >
@@ -233,7 +234,7 @@ index a5dee7bcaf7..1d4371d617d 100644
  				esdm_drng_seed(drng);
  				esdm_pool_unlock();
  			}
-@@ -698,6 +744,16 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
+@@ -698,6 +745,16 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
  			       ret);
  			return -EFAULT;
  		}
@@ -291,17 +292,17 @@ index f229bf8e984..2a7bccb7304 100644
  static inline uint32_t esdm_compress_osr(void)
  {
 diff --git a/meson_options.txt b/meson_options.txt
-index db4a2b9cf03..c17b24b015e 100644
+index db4a2b9cf03..d46be78f294 100644
 --- a/meson_options.txt
 +++ b/meson_options.txt
 @@ -295,6 +295,12 @@ option('hash_sha3_512', type: 'feature', value: 'disabled',
  option('gnutls', type: 'feature', value: 'disabled',
         description: 'Enable GnuTLS backend to provide cryptographic primitives')
  
-+option('maxrandombits', type: 'integer', value: 3,
++option('maxrandombits', type: 'integer', value: 17,
 +       description:  'todo description - change number')
 +
-+option('esdm_drop_bits', type: 'integer', value: 0,
++option('esdm_drop_bits', type: 'integer', value: 4000,
 +       description:  'todo description - change number')
 +
  ################################################################################

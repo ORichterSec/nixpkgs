@@ -24,7 +24,7 @@
 , hash_sha3_512 ? true
 , debugMode ? true
 , node ? false
-, maxrandombits ? 12
+, maxrandombits ? 11
 , esdmDropBits ? 5000
 }:
 
