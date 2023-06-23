@@ -117,7 +117,7 @@ index 259667a6540..bf0d995931f 100644
   * Maximum DRNG generation operations without reseed having full entropy
   * This value defines the absolute maximum value of DRNG generation operations
 diff --git a/esdm/esdm_drng_mgr.c b/esdm/esdm_drng_mgr.c
-index a5dee7bcaf7..359687c9bf0 100644
+index a5dee7bcaf7..0835a7eb036 100644
 --- a/esdm/esdm_drng_mgr.c
 +++ b/esdm/esdm_drng_mgr.c
 @@ -129,6 +129,7 @@ void esdm_drng_reset(struct esdm_drng *drng)
@@ -157,7 +157,7 @@ index a5dee7bcaf7..359687c9bf0 100644
  	struct entropy_buf seedbuf __aligned(ESDM_KCAPI_ALIGN),
  			   collected_seedbuf;
  	uint32_t collected_entropy = 0;
-@@ -403,6 +411,31 @@ static uint32_t esdm_drng_seed_es_nolock(struct esdm_drng *drng, bool init_ops,
+@@ -403,6 +411,41 @@ static uint32_t esdm_drng_seed_es_nolock(struct esdm_drng *drng, bool init_ops,
  	 */
  	memset(&seedbuf, 0, sizeof(seedbuf));
  
@@ -166,15 +166,25 @@ index a5dee7bcaf7..359687c9bf0 100644
 +	if(!drng->dropped_bits_at_start) {
 +		struct entropy_buf dropbuf;
 +		uint32_t dropped_entropy = 0;
-+		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "Dropped entropy set to:%zd | ESDM_DRNG_DROP_BITS_VAL: %zd | test EDSM_DRNG_MAX_BITS_WITHOUT_RESEED: %zd | EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE: %zd \n", dropped_entropy, ESDM_DRNG_DROP_BITS_VAL, EDSM_DRNG_MAX_BITS_WITHOUT_RESEED, EDSM_DRNG_MAX_BITS_WITHOUT_RESEED_VALUE);
++		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "Dropped entropy set to:%zd | ESDM_DRNG_DROP_BITS_VAL: %zd \n", dropped_entropy, ESDM_DRNG_DROP_BITS_VAL);
 +		while(dropped_entropy < ESDM_DRNG_DROP_BITS_VAL){
 +			//fetch the entropy into our dropbuf
-+			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "Hit inner loop\n");
-+			esdm_fill_seed_buffer(&dropbuf, ESDM_DRNG_DROP_BITS_VAL, true);
++			// esdm_fill_seed_buffer(&dropbuf, ESDM_DRNG_DROP_BITS_VAL, true);
++			uint32_t todo = min_uint32(ESDM_DRNG_DROP_BITS_VAL - dropped_entropy, esdm_avail_entropy());
++			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "avail_entropy:(%zd), security_streng:(%zd) | todo: (%zd)\n", esdm_avail_entropy(), esdm_security_strength(), todo);
++			//todo: this does retrieve more bits than we would want right now
++			esdm_fill_seed_buffer(&dropbuf, todo, drng->force_reseed);
 +			uint32_t current_ent;
 +			current_ent = esdm_entropy_rate_eb(&dropbuf);
 +			dropped_entropy += current_ent;
 +			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "dropping entropy before using it to seed --> dropped: (%zd)/(%zd)bits | current_entropy:(%zd) currently on core: (%zd)\n", dropped_entropy, ESDM_DRNG_DROP_BITS_VAL, current_ent, esdm_curr_node());
++		
++		//todo maybe return her with 0 if the required ammount is not dropped yet
++		//and we have no further entropy available
++
++		if(esdm_avail_entropy() < esdm_security_strength()){
++			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "error while dropping bits: (avail_entropy)%zd < (security_strength)%zd\n", esdm_avail_entropy(), esdm_security_strength());
++		}
 +		}
 +		if(dropped_entropy < ESDM_DRNG_DROP_BITS_VAL){
 +			logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "we still have not dropped enough entropy somehow\n");
@@ -189,7 +199,7 @@ index a5dee7bcaf7..359687c9bf0 100644
  	do {
  		/* Count the number of ES which delivered entropy */
  		num_es_delivered = 0;
-@@ -603,8 +636,21 @@ out:
+@@ -603,8 +646,21 @@ out:
  	esdm_drng_put_instances();
  }
  
@@ -211,7 +221,7 @@ index a5dee7bcaf7..359687c9bf0 100644
  	return (atomic_dec_and_test(&drng->requests) ||
  		drng->force_reseed ||
  		esdm_time_after_now(drng->last_seeded +
-@@ -638,19 +684,20 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
+@@ -638,19 +694,20 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
  	outbuflen = min_size(outbuflen, SSIZE_MAX);
  
  	if (atomic_read_u32(&drng->requests_since_fully_seeded) >
@@ -234,7 +244,7 @@ index a5dee7bcaf7..359687c9bf0 100644
  				esdm_drng_seed(drng);
  				esdm_pool_unlock();
  			}
-@@ -698,6 +745,16 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
+@@ -698,6 +755,16 @@ static ssize_t esdm_drng_get(struct esdm_drng *drng, uint8_t *outbuf,
  			       ret);
  			return -EFAULT;
  		}
@@ -291,6 +301,27 @@ index f229bf8e984..2a7bccb7304 100644
  
  static inline uint32_t esdm_compress_osr(void)
  {
+diff --git a/esdm/esdm_es_mgr.c b/esdm/esdm_es_mgr.c
+index d1d091da217..f2fd659905c 100644
+--- a/esdm/esdm_es_mgr.c
++++ b/esdm/esdm_es_mgr.c
+@@ -719,7 +719,7 @@ void esdm_fill_seed_buffer(struct entropy_buf *eb, uint32_t requested_bits,
+ 	    state->esdm_fully_seeded && (esdm_avail_entropy() < req_ent)) {
+ 		for_each_esdm_es(i)
+ 			eb->entropy_es[i].e_bits = 0;
+-
++		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "reset all the entropy bits in our entropy buffer\n");
+ 		goto wakeup;
+ 	}
+ 
+@@ -727,6 +727,7 @@ void esdm_fill_seed_buffer(struct entropy_buf *eb, uint32_t requested_bits,
+ 	for_each_esdm_es(i) {
+ 		esdm_es[i]->get_ent(&eb->entropy_es[i], requested_bits,
+ 				    state->esdm_fully_seeded);
++		logger(LOGGER_DEBUG2, LOGGER_C_DRNG, "in esdm_fill_seed_buffer: set %zd to %zd\n", i, eb->entropy_es[i].e_bits);
+ 	}
+ 
+ wakeup:
 diff --git a/meson_options.txt b/meson_options.txt
 index db4a2b9cf03..d46be78f294 100644
 --- a/meson_options.txt

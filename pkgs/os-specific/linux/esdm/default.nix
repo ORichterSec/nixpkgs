@@ -27,7 +27,7 @@
 , hash_sha3_512 ? true # meson build option for the conditioning hash: SHA3-512
 , node ? false
 , maxrandombits ? "12"
-, esdmDropBits ? "5000"
+, esdmDropBits ? "3000"
 }:
 
 assert drng_hash_drbg != drng_chacha20;
