@@ -40964,4 +40964,6 @@ with pkgs;
   charasay = callPackage ../tools/misc/charasay { };
 
   esdm-client = callPackage ../applications/misc/esdm-client { };
+
+  esdm-tool = callPackage ../applications/misc/esdm-tool { };
 }

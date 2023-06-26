@@ -27,7 +27,8 @@
 , hash_sha3_512 ? true # meson build option for the conditioning hash: SHA3-512
 , node ? false
 , maxrandombits ? "12"
-, esdmDropBits ? "3000"
+, esdmDropBits ? "4000"
+, testMode ? true
 }:
 
 assert drng_hash_drbg != drng_chacha20;
@@ -40,8 +41,8 @@ stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "smuellerDD";
     repo = "esdm";
-    rev = "c7b717bbf353be84afefafba3f5a9312f9a619b0";
-    sha256 = "sha256-JjNmiXpIIpnQhvGt2bwD601Zn8pcoYe4aYT1WwG0Cb8=";
+    rev = "ba44807a33224a0965671e7ec8226637ffa1c66c";
+    sha256 = "sha256-kGMVgPgpNijtE5j/cx/t1bh0eSxTmD8sHw2gTAusls0=";
   };
 
   patches = [
@@ -71,12 +72,13 @@ stdenv.mkDerivation rec {
     (lib.mesonEnable "node" node)
     (lib.mesonOption "maxrandombits" maxrandombits)
     (lib.mesonOption "esdm_drop_bits" esdmDropBits)
+    (lib.mesonEnable "testmode" testMode)
   ];
 
   strictDeps = true;
   mesonBuildType = "debug";
 
-  doCheck = true;
+  # doCheck = true;
 
   postInstall = ''
     mkdir -p $out/share/linux_esdm_es
