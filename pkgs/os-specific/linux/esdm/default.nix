@@ -1,6 +1,6 @@
 { lib
 , stdenv
-, fetchFromGitHub
+, fetchzip
 , protobufc
 , pkg-config
 , fuse3
@@ -32,13 +32,11 @@ assert hash_sha512 != hash_sha3_512;
 
 stdenv.mkDerivation rec {
   pname = "esdm";
-  version = "unstable-2023-06-19";
+  version = "0.6.0";
 
-  src = fetchFromGitHub {
-    owner = "smuellerDD";
-    repo = "esdm";
-    rev = "c7b717bbf353be84afefafba3f5a9312f9a619b0";
-    sha256 = "sha256-JjNmiXpIIpnQhvGt2bwD601Zn8pcoYe4aYT1WwG0Cb8=";
+  src = fetchzip {
+    url = "http://chronox.de/esdm/esdm-0.6.0.tar.xz";
+    sha256 = "sha256-swBKVb5gnND76w2ULT+5hR/jVOqxEe4TAB1gyaLKE9Q=";
   };
 
   nativeBuildInputs = [ meson pkg-config ninja ];

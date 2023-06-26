@@ -2,7 +2,7 @@
 
 stdenv.mkDerivation rec {
   pname = "esdm-es";
-  version = "unstable-2023-06-19-${kernel.version}";
+  version = "0.6.0";
 
   src = esdm.src;
 
