@@ -1,6 +1,6 @@
 { lib
 , stdenv
-, fetchzip
+, fetchFromGitHub
 , protobufc
 , pkg-config
 , fuse3
@@ -11,20 +11,20 @@
   # A more detailed explaination of the following meson build options can be found
   # in the source code of esdm.
   # A brief explanation is given:
-, selinux ? false # meson build option for selinux support
-, drng_hash_drbg ? true  # meson build option for setting the default drng callback
-, drng_chacha20 ? false # meson build option for setting the default drng callback
-, ais2031 ? true # meson build option for setting the seeding strategy to be compliant with AIS 20/31
-, linux-devfiles ? true # meson build option to enable linux /dev/random and /dev/urandom support
-, linux-getrandom ? true # meson build option to enable linux getrandom support
-, es_jitterRng ? true # meson build option to enable support for the entropy source: jitter rng
-, es_cpu ? true # meson build option to enable support for the entropy source: cpu-based entropy
-, es_kernel ? true # meson build option to enable support for the entropy source: kernel-based entropy
-, es_irq ? true # meson build option to enable support for the entropy source: interrupt-based entropy
-, es_sched ? true # meson build option to enable support for the entropy source: scheduler-based entropy
-, es_hwrand ? true # meson build option to enable support for the entropy source: /dev/hwrng
-, hash_sha512 ? false # meson build option for the conditioning hash: SHA2-512
-, hash_sha3_512 ? true # meson build option for the conditioning hash: SHA3-512
+, selinux ? false # enable selinux support
+, drng_hash_drbg ? true  # set the default drng callback
+, drng_chacha20 ? false # set the default drng callback
+, ais2031 ? true # set the seeding strategy to be compliant with AIS 20/31
+, linux-devfiles ? true # enable linux /dev/random and /dev/urandom support
+, linux-getrandom ? true # enable linux getrandom support
+, es_jitterRng ? true # enable support for the entropy source: jitter rng
+, es_cpu ? true # enable support for the entropy source: cpu-based entropy
+, es_kernel ? true # enable support for the entropy source: kernel-based entropy
+, es_irq ? true # enable support for the entropy source: interrupt-based entropy
+, es_sched ? true # enable support for the entropy source: scheduler-based entropy
+, es_hwrand ? true # enable support for the entropy source: /dev/hwrng
+, hash_sha512 ? false # set the conditioning hash: SHA2-512
+, hash_sha3_512 ? true # set the conditioning hash: SHA3-512
 }:
 
 assert drng_hash_drbg != drng_chacha20;
@@ -34,8 +34,10 @@ stdenv.mkDerivation rec {
   pname = "esdm";
   version = "0.6.0";
 
-  src = fetchzip {
-    url = "http://chronox.de/esdm/esdm-0.6.0.tar.xz";
+  src = fetchFromGitHub {
+    owner = "smuellerDD";
+    repo = "esdm";
+    rev = "v${version}";
     sha256 = "sha256-swBKVb5gnND76w2ULT+5hR/jVOqxEe4TAB1gyaLKE9Q=";
   };
 

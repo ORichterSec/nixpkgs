@@ -65,13 +65,13 @@ in
     lib.mkMerge [
       ({
         systemd.packages = [ cfg.package ];
-
-        assertions = lib.lists.singleton {
-          assertion = linux_6_3 || cfg.kernelSupportEnable;
-          message = "Expected kernel-version >= 6.3. got kernel-version:${kernelVersion}";
-        };
       })
       (lib.mkIf cfg.kernelSupportEnable {
+        assertions = lib.lists.singleton {
+          assertion = linux_6_3;
+          message = "ESDM expects kernel version >= 6.3. got kernelversion:${kernelVersion}";
+        };
+
         boot.extraModulePackages = [ config.boot.kernelPackages.esdm-es.out ];
         boot.extraModprobeConfig = ''
           options esdm-es esdm_hash_name=${cfg.esdmHashName}
@@ -97,7 +97,7 @@ in
         systemd.services."esdm-server".wantedBy = [ "basic.target" ];
         systemd.services."esdm-server".serviceConfig = lib.mkIf cfg.verbose {
           ExecStart = [
-            " " # unset previous value defined in 'esdm-server.service.in'
+            " " # unset previous value defined in 'esdm-server.service'
             "${cfg.package}/bin/esdm-server -f -vvvvvv"
           ];
         };
@@ -107,7 +107,7 @@ in
         systemd.services."esdm-cuse-random".wantedBy = [ "basic.target" ];
         systemd.services."esdm-cuse-random".serviceConfig = lib.mkIf cfg.verbose {
           ExecStart = [
-            " " # unset previous value defined in 'esdm-cuse-random.service.in'
+            " " # unset previous value defined in 'esdm-cuse-random.service'
             "${cfg.package}/bin/esdm-cuse-random -f -v 6"
           ];
         };
@@ -117,7 +117,7 @@ in
         systemd.services."esdm-cuse-urandom".wantedBy = [ "basic.target" ];
         systemd.services."esdm-cuse-urandom".serviceConfig = lib.mkIf cfg.verbose {
           ExecStart = [
-            " " # unset previous value defined in 'esdm-cuse-urandom.service.in'
+            " " # unset previous value defined in 'esdm-cuse-urandom.service'
             "${config.services.esdm.package}/bin/esdm-cuse-urandom -f -v 6"
           ];
         };
@@ -127,7 +127,7 @@ in
         systemd.services."esdm-proc".wantedBy = [ "basic.target" ];
         systemd.services."esdm-proc".serviceConfig = lib.mkIf cfg.verbose {
           ExecStart = [
-            " " # unset previous value defined in 'esdm-proc.service.in'
+            " " # unset previous value defined in 'esdm-proc.service'
             "${cfg.package}/bin/esdm-proc --relabel -f -o allow_other /proc/sys/kernel/random -v 6"
           ];
         };

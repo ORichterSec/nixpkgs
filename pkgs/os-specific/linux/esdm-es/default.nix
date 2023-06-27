@@ -2,7 +2,7 @@
 
 stdenv.mkDerivation rec {
   pname = "esdm-es";
-  version = "0.6.0";
+  version = "${esdm.version}";
 
   src = esdm.src;
 
