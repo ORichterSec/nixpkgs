@@ -30913,6 +30913,8 @@ with pkgs;
 
   errbot = callPackage ../applications/networking/errbot { };
 
+  esdm-client = callPackage ../applications/misc/esdm-client { };
+
   espeak-classic = callPackage ../applications/audio/espeak { };
 
   espeak-ng = callPackage ../applications/audio/espeak-ng { };
