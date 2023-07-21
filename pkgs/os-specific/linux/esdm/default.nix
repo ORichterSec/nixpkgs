@@ -69,6 +69,11 @@ stdenv.mkDerivation rec {
   strictDeps = true;
   mesonBuildType = "release";
 
+  postInstall = ''
+    mkdir -p $out/share/linux_esdm_es
+    cp -r ../addon/linux_esdm_es/*.patch $out/share/linux_esdm_es/
+  '';
+
   meta = {
     homepage = "https://www.chronox.de/esdm.html";
     description = "Entropy Source and DRNG Manager in user space";

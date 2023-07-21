@@ -2,11 +2,14 @@
 
 let
   cfg = config.services.esdm;
+  kernelVersion = config.boot.kernelPackages.kernel.version;
+  isAtLeastLinux63 = (lib.versionAtLeast kernelVersion "6.3");
 in
 {
   options.services.esdm = {
     enable = lib.mkEnableOption (lib.mdDoc "ESDM service configuration");
     package = lib.mkPackageOptionMD pkgs "esdm" { };
+    kernelSupportEnable = lib.mkEnableOption (lib.mdDoc "Enable kernel support for the scheduler- and interrupt-entropy-source.");
     serverEnable = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -49,6 +52,13 @@ in
         for the highest verbosity.
       '';
     };
+    esdmHashName = lib.mkOption {
+      type = lib.types.str;
+      default = "sha3-512";
+      description = lib.mdDoc ''
+        Set the hash configration of the kernel module esdm_es.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable (
@@ -56,6 +66,31 @@ in
       ({
         systemd.packages = [ cfg.package ];
       })
+      (lib.mkIf cfg.kernelSupportEnable {
+        assertions = lib.lists.singleton {
+          assertion = isAtLeastLinux63;
+          message = "ESDM expects kernel version >= 6.3. current kernel version: ${kernelVersion}";
+        };
+
+        boot.extraModulePackages = [ config.boot.kernelPackages.esdm_es.out ];
+        boot.extraModprobeConfig = ''
+          options esdm_es esdm_hash_name=${cfg.esdmHashName}
+        '';
+        boot.kernelModules = [ "esdm_es" ];
+
+        #patch kernel (works for kernel version 6.3)
+        boot.kernelPatches = lib.lists.optionals isAtLeastLinux63 [
+          {
+            name = "esdm_sched_es_hook";
+            patch = "${cfg.package}/share/linux_esdm_es/0001-ESDM-scheduler-entropy-source-hooks_6.4.patch";
+          }
+          {
+            name = "esdm_inter_es_hook";
+            patch = "${cfg.package}/share/linux_esdm_es/0002-ESDM-interrupt-entropy-source-hooks_6.4.patch";
+          }
+        ];
+      })
+
       # It is necessary to set those options for these services to be started by systemd in NixOS
       (lib.mkIf cfg.serverEnable {
         systemd.services."esdm-server".wantedBy = [ "basic.target" ];
