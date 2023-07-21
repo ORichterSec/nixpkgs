@@ -18,13 +18,13 @@ stdenv.mkDerivation rec {
     src = fetchFromGitHub {
         owner = "thillux";
         repo = "esdm-client";
-        rev = "456d6d44f9fb251d45d053f3b1bcc71bd4b416c1";
-        sha256 = "sha256-dqcSxa4VaWG+aNEWdtRR9CDuLC1StYd+/Zg/yPawpa4=";
+        rev = "fe4b4d1f8dd56081d3da9592e4ca7616562b7164";
+        sha256 = "sha256-1bShilXJcOQj2Xg4SynObaYGyZ7l/v+oSpdIrszSf6U=";
     };
 
-    patches = [
-        ./code.patch
-    ];
+    # patches = [
+    #     ./code.patch
+    # ];
 
     nativeBuildInputs = [ meson ninja pkg-config esdm boost jsoncpp protobufc];
     buildInputs = [ esdm jsoncpp catch2 protobufc];

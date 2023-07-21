@@ -19,11 +19,11 @@
 , linuxDevFiles ? true # enable linux /dev/random and /dev/urandom support
 , linuxGetRandom ? true # enable linux getrandom support
 , esJitterRng ? true # enable support for the entropy source: jitter rng
-, esCPU ? true # enable support for the entropy source: cpu-based entropy
-, esKernel ? true # enable support for the entropy source: kernel-based entropy
+, esCPU ? false # enable support for the entropy source: cpu-based entropy
+, esKernel ? false # enable support for the entropy source: kernel-based entropy
 , esIRQ ? false # enable support for the entropy source: interrupt-based entropy
-, esSched ? false # enable support for the entropy source: scheduler-based entropy
-, esHwrand ? true # enable support for the entropy source: /dev/hwrng
+, esSched ? true # enable support for the entropy source: scheduler-based entropy
+, esHwrand ? false # enable support for the entropy source: /dev/hwrng
 , hashSha512 ? false # set the conditioning hash: SHA2-512
 , hashSha3_512 ? true # set the conditioning hash: SHA3-512
 }:
@@ -38,17 +38,9 @@ stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "smuellerDD";
     repo = "esdm";
-    rev = "v${version}";
-    sha256 = "sha256-swBKVb5gnND76w2ULT+5hR/jVOqxEe4TAB1gyaLKE9Q=";
+    rev = "bff36a08d210b1e9275c185722d7635da45b5663";
+    sha256 = "sha256-NRycytZzvm/jeM1jkE01lbYQ6W8kO572FE2Dwcl+SD4=";
   };
-
-  patches = [
-    (fetchpatch {
-      name = "arm64.patch";
-      url = "https://github.com/smuellerDD/esdm/commit/86b93a0ddf684448aba152c8f1b3baf40a6d41c0.patch";
-      sha256 = "sha256-gjp13AEsDNj23fcGanAAn2KCbYKA0cphhf4mCxek9Yg=";
-    })
-  ];
 
   nativeBuildInputs = [ meson pkg-config ninja ];
   buildInputs = [ protobufc fuse3 jitterentropy ]
