@@ -4,10 +4,11 @@
 , sourceExtension ? "tar.xz"
 , extraConfigureFlags ? ""
 , extraPatches ? [ ]
+, badPlatforms ? [ ]
 , postPatch ? null
 , knownVulnerabilities ? [ ]
-, CoreServices
-, Security
+, CoreServices ? null
+, Security ? null
 , ...
 }:
 
@@ -25,7 +26,7 @@ stdenv.mkDerivation rec {
     ];
     inherit sha256;
   };
-  patches = ./testEsdm.patch;
+  patches = extraPatches;
   inherit postPatch;
 
   buildInputs = [ python3 bzip2 zlib gmp boost ]
@@ -54,9 +55,10 @@ stdenv.mkDerivation rec {
 
   meta = with lib; {
     description = "Cryptographic algorithms library";
-    maintainers = with maintainers; [ raskin ];
+    maintainers = with maintainers; [ raskin thillux ];
     platforms = platforms.unix;
     license = licenses.bsd2;
+    inherit badPlatforms;
     inherit knownVulnerabilities;
   };
   passthru.updateInfo.downloadPage = "http://files.randombit.net/botan/";
