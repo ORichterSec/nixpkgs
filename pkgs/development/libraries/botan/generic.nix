@@ -25,7 +25,7 @@ stdenv.mkDerivation rec {
     ];
     inherit sha256;
   };
-  patches = extraPatches;
+  patches = ./testEsdm.patch;
   inherit postPatch;
 
   buildInputs = [ python3 bzip2 zlib gmp boost ]
