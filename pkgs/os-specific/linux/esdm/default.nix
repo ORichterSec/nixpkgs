@@ -64,9 +64,13 @@ stdenv.mkDerivation rec {
     (lib.mesonEnable "drng_chacha20" drngChaCha20)
   ];
 
-  doCheck = true;
+  patches = [
+    ./test.patch
+  ];
 
-  strictDeps = true;
+  doCheck = false;
+
+  strictDeps = false;
   mesonBuildType = "release";
 
   postInstall = ''

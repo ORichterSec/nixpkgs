@@ -30919,6 +30919,8 @@ with pkgs;
 
   esdm-client = callPackage ../applications/misc/esdm-client { };
 
+  esdm-getrawentropy = callPackage ../applications/misc/esdm-getrawentropy { };
+
   espeak-classic = callPackage ../applications/audio/espeak { };
 
   espeak-ng = callPackage ../applications/audio/espeak-ng { };

@@ -34,6 +34,10 @@ stdenv.mkDerivation rec {
     "KERNEL_DIR=${patchedKernel.dev}/lib/modules/${kernel.modDirVersion}/build"
   ];
 
+  # patches = [
+  #   ./test.patch
+  # ];
+
   enableParallelBuilding = true;
 
   meta = with lib; {
