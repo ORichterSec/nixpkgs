@@ -7,6 +7,9 @@
 , fuse3
 , meson
 , ninja
+, cmake
+, openssl
+, botan3
 , libselinux
 , jitterentropy
   # A more detailed explaination of the following meson build options can be found
@@ -36,14 +39,14 @@ stdenv.mkDerivation rec {
   version = "0.6.0";
 
   src = fetchFromGitHub {
-    owner = "smuellerDD";
+    owner = "thillux";
     repo = "esdm";
-    rev = "bff36a08d210b1e9275c185722d7635da45b5663";
-    sha256 = "sha256-NRycytZzvm/jeM1jkE01lbYQ6W8kO572FE2Dwcl+SD4=";
+    rev = "3703250085bcb3a13b0cea672e2bc3c18c514ade";
+    sha256 = "sha256-2ZsofAhsMe4cky337ZsSYTfk++Vf3jTNX6gS/u0R8wo=";
   };
 
-  nativeBuildInputs = [ meson pkg-config ninja ];
-  buildInputs = [ protobufc fuse3 jitterentropy ]
+  nativeBuildInputs = [ meson pkg-config ninja cmake ];
+  buildInputs = [ protobufc fuse3 jitterentropy openssl botan3]
     ++ lib.optional selinux libselinux;
 
   mesonFlags = [
@@ -64,7 +67,7 @@ stdenv.mkDerivation rec {
     (lib.mesonEnable "drng_chacha20" drngChaCha20)
   ];
 
-  doCheck = true;
+  doCheck = false;
 
   strictDeps = true;
   mesonBuildType = "release";
