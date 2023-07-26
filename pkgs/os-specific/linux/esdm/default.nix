@@ -22,11 +22,11 @@
 , linuxDevFiles ? true # enable linux /dev/random and /dev/urandom support
 , linuxGetRandom ? true # enable linux getrandom support
 , esJitterRng ? true # enable support for the entropy source: jitter rng
-, esCPU ? false # enable support for the entropy source: cpu-based entropy
-, esKernel ? false # enable support for the entropy source: kernel-based entropy
-, esIRQ ? false # enable support for the entropy source: interrupt-based entropy
+, esCPU ? true # enable support for the entropy source: cpu-based entropy
+, esKernel ? true # enable support for the entropy source: kernel-based entropy
+, esIRQ ? true # enable support for the entropy source: interrupt-based entropy
 , esSched ? true # enable support for the entropy source: scheduler-based entropy
-, esHwrand ? false # enable support for the entropy source: /dev/hwrng
+, esHwrand ? true # enable support for the entropy source: /dev/hwrng
 , hashSha512 ? false # set the conditioning hash: SHA2-512
 , hashSha3_512 ? true # set the conditioning hash: SHA3-512
 }:
@@ -39,14 +39,14 @@ stdenv.mkDerivation rec {
   version = "0.6.0";
 
   src = fetchFromGitHub {
-    owner = "thillux";
+    owner = "smuellerDD";
     repo = "esdm";
-    rev = "3703250085bcb3a13b0cea672e2bc3c18c514ade";
-    sha256 = "sha256-2ZsofAhsMe4cky337ZsSYTfk++Vf3jTNX6gS/u0R8wo=";
+    rev = "bff36a08d210b1e9275c185722d7635da45b5663";
+    sha256 = "sha256-NRycytZzvm/jeM1jkE01lbYQ6W8kO572FE2Dwcl+SD4=";
   };
 
   nativeBuildInputs = [ meson pkg-config ninja cmake ];
-  buildInputs = [ protobufc fuse3 jitterentropy openssl botan3]
+  buildInputs = [ protobufc fuse3 jitterentropy]
     ++ lib.optional selinux libselinux;
 
   mesonFlags = [
@@ -65,6 +65,7 @@ stdenv.mkDerivation rec {
     (lib.mesonEnable "selinux" selinux)
     (lib.mesonEnable "drng_hash_drbg" drngHashDrbg)
     (lib.mesonEnable "drng_chacha20" drngChaCha20)
+    (lib.mesonEnable "testmode" true)
   ];
 
   patches = [

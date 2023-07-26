@@ -1,3 +1,20 @@
+diff --git a/Makefile b/Makefile
+index 39968b234de..515464e574a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -27,9 +27,9 @@ esdm_es-y			+= esdm_es_mgr_irq.o esdm_es_irq.o
+ #
+ # When enabling this code base, select the proper interfaces in esdm_testing.h.
+ #
+-#CFLAGS_esdm_es_mgr.o		+= -DESDM_TESTING
+-#CFLAGS_esdm_testing.o		= -DESDM_TESTING
+-#esdm_es-y			+= esdm_testing.o
++CFLAGS_esdm_es_mgr.o		+= -DESDM_TESTING
++CFLAGS_esdm_testing.o		= -DESDM_TESTING
++esdm_es-y			+= esdm_testing.o
+ 
+ all:
+ 	make -C $(KERNEL_DIR) M=$(PWD) modules
 diff --git a/esdm_testing.h b/esdm_testing.h
 index ca4789f424f..d96b2f62d01 100644
 --- a/esdm_testing.h

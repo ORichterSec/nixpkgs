@@ -1,3 +1,20 @@
+diff --git a/addon/linux_esdm_es/Makefile b/addon/linux_esdm_es/Makefile
+index 39968b234de..515464e574a 100644
+--- a/addon/linux_esdm_es/Makefile
++++ b/addon/linux_esdm_es/Makefile
+@@ -27,9 +27,9 @@ esdm_es-y			+= esdm_es_mgr_irq.o esdm_es_irq.o
+ #
+ # When enabling this code base, select the proper interfaces in esdm_testing.h.
+ #
+-#CFLAGS_esdm_es_mgr.o		+= -DESDM_TESTING
+-#CFLAGS_esdm_testing.o		= -DESDM_TESTING
+-#esdm_es-y			+= esdm_testing.o
++CFLAGS_esdm_es_mgr.o		+= -DESDM_TESTING
++CFLAGS_esdm_testing.o		= -DESDM_TESTING
++esdm_es-y			+= esdm_testing.o
+ 
+ all:
+ 	make -C $(KERNEL_DIR) M=$(PWD) modules
 diff --git a/addon/linux_esdm_es/esdm_testing.h b/addon/linux_esdm_es/esdm_testing.h
 index ca4789f424f..d96b2f62d01 100644
 --- a/addon/linux_esdm_es/esdm_testing.h
@@ -34,4 +51,16 @@ index ca4789f424f..d96b2f62d01 100644
 +#define CONFIG_ESDM_SCHED_PERF
  
  /******************************************************************************/
+ 
+diff --git a/tests/rpc_client/rpc_get_random_bytes_pr_test.c b/tests/rpc_client/rpc_get_random_bytes_pr_test.c
+index 409242eecf5..3f3bf56b894 100644
+--- a/tests/rpc_client/rpc_get_random_bytes_pr_test.c
++++ b/tests/rpc_client/rpc_get_random_bytes_pr_test.c
+@@ -28,6 +28,7 @@ int main(int argc, char *argv[])
+ {
+ 	uint8_t buf[32];
+ 	uint8_t zero[sizeof(buf)];
++	size_t len = sizeof(buf);
+ 	size_t count = 1000;
+ 	int ret;
  
