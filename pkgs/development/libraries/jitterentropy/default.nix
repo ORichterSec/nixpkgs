@@ -1,4 +1,4 @@
-{ lib, stdenv, fetchFromGitHub }:
+{ lib, stdenv, fetchFromGitHub, test ? true }:
 
 stdenv.mkDerivation rec {
   pname = "jitterentropy";
@@ -16,12 +16,23 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
   hardeningDisable = [ "fortify" ]; # avoid warnings
 
+  postBuild = lib.optionals test ''
+    pushd tests/raw-entropy/recording_userspace
+    make -f Makefile.hashtime
+    popd
+  '';
+
   # prevent jitterentropy from builtin strip to allow controlling this from the derivation's
   # settings. Also fixes a strange issue, where this strip may fail when cross-compiling.
   installFlags = [
     "INSTALL_STRIP=install"
     "PREFIX=${placeholder "out"}"
   ];
+
+  postInstall = lib.optionals test ''
+    mkdir -p $out/bin
+    cp tests/raw-entropy/recording_userspace/jitterentropy-hashtime $out/bin/
+  '';
 
   meta = with lib; {
     description = "Provides a noise source using the CPU execution timing jitter";

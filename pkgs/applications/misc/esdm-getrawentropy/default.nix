@@ -1,10 +1,7 @@
 { lib
 , stdenv
-, boost
-, catch2
-, esdm
 , fetchFromGitHub
-, jsoncpp
+, cmake
 , meson
 , ninja
 , pkg-config
@@ -22,7 +19,12 @@ stdenv.mkDerivation rec{
         sha256 = "sha256-3Q59+/EUf2mnLzDZf/2i8mmgo2z0XFvSAMdHDHoUZ9U=";
     };
 
-    buildPhase = "gcc -Wall -pedantic -Wextra -o getrawentropy ./test/getrawentropy.c";
+    nativeBuildInputs = [ pkg-config ];
+
+    # buildPhase = "make -f ./Makefile all";
+    #buildPhase = "gcc -Wall -pedantic -Wextra -o getrawentropy ./test/getrawentropy.c";
+    preConfig = "echo ''";
+    buildPhase = "${stdenv.cc.targetPrefix}gcc -o getrawentropy ./test/getrawentropy.c";
     installPhase = ''
         mkdir -p $out/bin
         mv getrawentropy $out/bin

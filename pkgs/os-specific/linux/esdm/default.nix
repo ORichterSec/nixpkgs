@@ -22,9 +22,9 @@
 , linuxDevFiles ? true # enable linux /dev/random and /dev/urandom support
 , linuxGetRandom ? true # enable linux getrandom support
 , esJitterRng ? true # enable support for the entropy source: jitter rng
-, esCPU ? true # enable support for the entropy source: cpu-based entropy
-, esKernel ? true # enable support for the entropy source: kernel-based entropy
-, esIRQ ? true # enable support for the entropy source: interrupt-based entropy
+, esCPU ? false # enable support for the entropy source: cpu-based entropy
+, esKernel ? false # enable support for the entropy source: kernel-based entropy
+, esIRQ ? false # enable support for the entropy source: interrupt-based entropy
 , esSched ? true # enable support for the entropy source: scheduler-based entropy
 , esHwrand ? true # enable support for the entropy source: /dev/hwrng
 , hashSha512 ? false # set the conditioning hash: SHA2-512
@@ -66,6 +66,9 @@ stdenv.mkDerivation rec {
     (lib.mesonEnable "drng_hash_drbg" drngHashDrbg)
     (lib.mesonEnable "drng_chacha20" drngChaCha20)
     (lib.mesonEnable "testmode" true)
+    "-Des_sched_entropy_rate=256" 
+    "-Des_irq_entropy_rate=0"
+    "-Des_hwrand_entropy_rate=0"
   ];
 
   patches = [
