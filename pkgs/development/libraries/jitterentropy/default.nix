@@ -16,6 +16,10 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
   hardeningDisable = [ "fortify" ]; # avoid warnings
 
+  patches = [
+    ./jitter.patch
+  ];
+
   postBuild = lib.optionals test ''
     pushd tests/raw-entropy/recording_userspace
     make -f Makefile.hashtime

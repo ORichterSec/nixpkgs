@@ -1,0 +1,12 @@
+diff --git a/tests/raw-entropy/recording_userspace/Makefile.hashtime b/tests/raw-entropy/recording_userspace/Makefile.hashtime
+index 82b8472..ab482c9 100644
+--- a/tests/raw-entropy/recording_userspace/Makefile.hashtime
++++ b/tests/raw-entropy/recording_userspace/Makefile.hashtime
+@@ -2,6 +2,7 @@
+ 
+ CC ?= gcc
+ CFLAGS +=-Wextra -Wall -pedantic -fPIC -O0
++CFLAGS += -DJENT_CONF_ENABLE_INTERNAL_TIMER
+ #Hardening
+ CFLAGS +=-fwrapv --param ssp-buffer-size=4 -fvisibility=hidden -fPIE -Wcast-align -Wmissing-field-initializers -Wshadow -Wswitch-enum
+ LDFLAGS +=-Wl,-z,relro,-z,now

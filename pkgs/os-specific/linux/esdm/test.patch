@@ -16,34 +16,18 @@ index 39968b234de..515464e574a 100644
  all:
  	make -C $(KERNEL_DIR) M=$(PWD) modules
 diff --git a/addon/linux_esdm_es/esdm_testing.h b/addon/linux_esdm_es/esdm_testing.h
-index ca4789f424f..d96b2f62d01 100644
+index ca4789f424f..f45bcc836e5 100644
 --- a/addon/linux_esdm_es/esdm_testing.h
 +++ b/addon/linux_esdm_es/esdm_testing.h
-@@ -219,19 +219,19 @@ config LRNG_SCHED_PERF
- 	  the first 1000 entropy events since boot can be sampled.
- */
+@@ -227,11 +227,11 @@ config LRNG_SCHED_PERF
+ #undef CONFIG_ESDM_RAW_ARRAY
+ #undef CONFIG_ESDM_IRQ_PERF
  
--#undef CONFIG_ESDM_RAW_HIRES_ENTROPY
--#undef CONFIG_ESDM_RAW_JIFFIES_ENTROPY
--#undef CONFIG_ESDM_RAW_IRQ_ENTROPY
--#undef CONFIG_ESDM_RAW_RETIP_ENTROPY
--#undef CONFIG_ESDM_RAW_REGS_ENTROPY
--#undef CONFIG_ESDM_RAW_ARRAY
--#undef CONFIG_ESDM_IRQ_PERF
--
 -#undef CONFIG_ESDM_RAW_SCHED_HIRES_ENTROPY
 -#undef CONFIG_ESDM_RAW_SCHED_PID_ENTROPY
 -#undef CONFIG_ESDM_RAW_SCHED_START_TIME_ENTROPY
 -#undef CONFIG_ESDM_RAW_SCHED_NVCSW_ENTROPY
 -#undef CONFIG_ESDM_SCHED_PERF
-+#define CONFIG_ESDM_RAW_HIRES_ENTROPY
-+#define CONFIG_ESDM_RAW_JIFFIES_ENTROPY
-+#define CONFIG_ESDM_RAW_IRQ_ENTROPY
-+#define CONFIG_ESDM_RAW_RETIP_ENTROPY
-+#define CONFIG_ESDM_RAW_REGS_ENTROPY
-+#define CONFIG_ESDM_RAW_ARRAY
-+#define CONFIG_ESDM_IRQ_PERF
-+
 +#define CONFIG_ESDM_RAW_SCHED_HIRES_ENTROPY
 +#define CONFIG_ESDM_RAW_SCHED_PID_ENTROPY
 +#define CONFIG_ESDM_RAW_SCHED_START_TIME_ENTROPY
