@@ -8808,6 +8808,8 @@ with pkgs;
 
   hex = callPackage ../tools/misc/hex { };
 
+  hexbinhex = callPackage ../tools/misc/hexbinhex { };
+
   hexd = callPackage ../tools/misc/hexd { };
   pixd = callPackage ../tools/misc/pixd { };
 
