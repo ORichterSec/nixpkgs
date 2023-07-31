@@ -22396,6 +22396,8 @@ with pkgs;
 
   libinklevel = callPackage ../development/libraries/libinklevel { };
 
+  libkcapi = callPackage ../development/libraries/libkcapi { };
+
   libnats-c = callPackage ../development/libraries/libnats-c { };
 
   liburing = callPackage ../development/libraries/liburing { };
