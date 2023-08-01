@@ -1625,6 +1625,8 @@ with pkgs;
 
   davinci-resolve = callPackage ../applications/video/davinci-resolve { };
 
+  djent = callPackage ../tools/misc/djent { };
+
   dolbybcsoftwaredecode = callPackage ../applications/audio/dolbybcsoftwaredecode { };
 
   donkey = callPackage ../tools/security/donkey { };
@@ -8805,6 +8807,8 @@ with pkgs;
   hevea = callPackage ../tools/typesetting/hevea { };
 
   hex = callPackage ../tools/misc/hex { };
+
+  hexbinhex = callPackage ../tools/misc/hexbinhex { };
 
   hexd = callPackage ../tools/misc/hexd { };
   pixd = callPackage ../tools/misc/pixd { };
@@ -22396,6 +22400,8 @@ with pkgs;
 
   libinklevel = callPackage ../development/libraries/libinklevel { };
 
+  libkcapi = callPackage ../development/libraries/libkcapi { };
+  
   libnats-c = callPackage ../development/libraries/libnats-c { };
 
   liburing = callPackage ../development/libraries/liburing { };
@@ -39541,6 +39547,8 @@ with pkgs;
   colort = callPackage ../applications/misc/colort { };
 
   terminal-parrot = callPackage ../applications/misc/terminal-parrot { };
+
+  djenrandom = callPackage ../tools/misc/djenrandom { };
 
   epsonscan2 = pkgs.libsForQt5.callPackage ../misc/drivers/epsonscan2 { };
 
