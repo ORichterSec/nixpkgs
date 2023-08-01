@@ -1,0 +1,13 @@
+diff --git a/src/jitterentropy-base.c b/src/jitterentropy-base.c
+index 3e250c1..d94be64 100644
+--- a/src/jitterentropy-base.c
++++ b/src/jitterentropy-base.c
+@@ -380,7 +380,7 @@ static inline uint32_t jent_memsize(unsigned int flags)
+ 	if (!memsize)
+ 		memsize = JENT_MEMORY_SIZE;
+ 
+-	return memsize;
++	return max_memsize;
+ }
+ 
+ static int jent_selftest_run = 0;
