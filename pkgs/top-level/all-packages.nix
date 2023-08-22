@@ -32373,6 +32373,10 @@ with pkgs;
 
   hello = callPackage ../applications/misc/hello { };
 
+  helloAda = callPackage ../misc/adaTest { };
+
+  helloC = callPackage ../misc/adaC { };
+
   hello-wayland = callPackage ../applications/graphics/hello-wayland { };
 
   hello-unfree = callPackage ../applications/misc/hello-unfree { };
