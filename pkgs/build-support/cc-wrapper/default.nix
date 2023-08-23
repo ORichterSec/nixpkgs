@@ -293,6 +293,7 @@ stdenv.mkDerivation {
     + optionalString cc.langAda or false ''
       for cmd in gnatbind gnatchop gnatclean gnatlink gnatls gnatmake; do
         wrap ${targetPrefix}$cmd ${./gnat-wrapper.sh} $ccPath/${targetPrefix}$cmd
+        echo "testaaaaaaa:$cmd"
       done
 
       for cmd in gnat gnatkr gnatname gnatprep; do
