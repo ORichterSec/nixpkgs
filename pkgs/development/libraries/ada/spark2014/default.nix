@@ -49,12 +49,16 @@ stdenv.mkDerivation rec {
   '';
 
   configurePhase = ''
+    runHook preConfigure
     make setup
+    runHook postConfigure
   '';
 
   installPhase = ''
+    runHook preInstall
     make install-all
     cp -a ./install/. $out
+    runHook postInstall
   '';
 
   meta = with lib; {

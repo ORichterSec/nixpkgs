@@ -1,7 +1,8 @@
 { lib
 , stdenv
+, callPackage
 , gnat
-, gprbuild
+# , gprbuild
 , gnat12
 , gnatboot
 , buildPackages
@@ -15,23 +16,19 @@
 , autoPatchelfHook
 , tree
 }:
-
+# let
+#   gnatCross = callPackage ./boot.nix { };
+# in
 stdenv.mkDerivation rec {
     name = "helloAda";
     src = ./.;
 
-    gcc = gcc12.overrideAttrs { langAda = true; } ;
-    # nativeBuildInputs = [
-    #   pkgsCross.aarch64-multiplatform.pkgsBuildHost.gnat
-    # ];
-
     depsBuildBuild = [
       buildPackages.stdenv.cc
-      gcc
       # gprbuild
       # gnat
       gnatboot
-      # gnat
+      gnat
       # autoPatchelfHook
       binutils
       autoconf
@@ -41,14 +38,10 @@ stdenv.mkDerivation rec {
 
     depsBuildHost = [
       pkgsCross.aarch64-multiplatform.pkgsBuildHost.gnat12
-      # pkgsCross.aarch64-multiplatform.pkgsBuildBuild.gnat12
+      # gnat
       pkgsCross.aarch64-multiplatform.pkgsBuildHost.gnatboot12
       pkgsCross.aarch64-multiplatform.pkgsBuildHost.binutils
       autoconf
-    ];
-
-    depsHostTarget = [
-      pkgsCross.aarch64-multiplatform.pkgsBuildHost.gnatboot12
     ];
 
     dontUnpack = true;
@@ -56,10 +49,8 @@ stdenv.mkDerivation rec {
     buildPhase = ''
       runHook preBuild
       
-      cp ${./helloAda.adb} helloAda.adb
+      cp ${./helloada.adb} helloada.adb
       
-      # TEST=${pkgsCross.aarch64-multiplatform.pkgsBuildHost.gnatboot12.targetPrefix}
-      # TEST=${pkgsCross.aarch64-multiplatform.pkgsBuildHost.gnatboot12}
       TEST=${pkgsCross.aarch64-multiplatform.pkgsBuildHost.gnat12}
       # TEST=${pkgsCross.aarch64-multiplatform.pkgsBuildBuild.gnat12}
       # TEST=${pkgsCross.aarch64-multiplatform.pkgsBuildHost.gnat.targetPrefix}
@@ -68,7 +59,7 @@ stdenv.mkDerivation rec {
       echo 123
       #echo $(tree $TEST | grep gnatmake)
       echo $(which gnatmake)
-      gnatmake helloAda.adb
+      gnatmake helloada.adb
       #echo "${stdenv.buildPlatform.system},${stdenv.hostPlatform.system},${stdenv.targetPlatform.system} "
 
       runHook postBuild
@@ -77,18 +68,6 @@ stdenv.mkDerivation rec {
 
 
     strictDeps = true;
-
-    buildFlags = [
-      # "PREFIX=$(out)"
-      "CC=${stdenv.cc.targetPrefix}cc"
-      "DESTDIR=${placeholder "out"}"
-      # "PROCESSORS=$(NIX_BUILD_CORES)"
-      # "TARGET=${stdenv.targetPlatform.config}"
-      "HOST=${stdenv.buildPlatform.config}"
-      "prefix=${placeholder "out"}"
-      ] ++ lib.optionals (!stdenv.hostPlatform.isStatic) [
-      "LIBRARY_TYPE=relocatable"
-    ];
 
     makeFlags = [ 
       # "PREFIX=$(out)"
@@ -117,13 +96,14 @@ stdenv.mkDerivation rec {
         echo "${stdenv.buildPlatform.system},${stdenv.hostPlatform.system},${stdenv.targetPlatform.system} "
         echo "${stdenv.buildPlatform.config},${stdenv.hostPlatform.config},${stdenv.targetPlatform.config} "
         mkdir -p $out/bin
-        cp helloAda $out/bin/
+        cp helloada $out/bin/
         runHook postInstall
     '';
 }
 
 
 
+    # gccA = gcc12.overrideAttrs { langAda = true; } ;
 
     # depsBuildTarget = [
     #   # gcc
@@ -142,7 +122,7 @@ stdenv.mkDerivation rec {
     #   runHook postConfig
     # '';
 
-#      ${buildPackages.gnat-bootstrap}/gcc -c helloAda.adb
+#      ${buildPackages.gnat-bootstrap}/gcc -c helloada.adb
     # buildPhase = ''
     #   runHook preBuild
     #   echo $(pwd)
@@ -154,14 +134,14 @@ stdenv.mkDerivation rec {
     #   OTHER=$(ls ${buildPackages.gnat}/bin/aarch64-unknown-linux-gnu-gnatmake)
       
     #   # echo $(which gnatmake)
-    #   $OTHER helloAda.adb
+    #   $OTHER helloada.adb
     #   # echo test2
     #   echo $(which aarch64-unknown-linux-gnu-gnatmake)
     #   # GNATMAKE=$(which gnatmake)
-    #   # $GNATMAKE helloAda.adb
-    #   #${buildPackages.gnat-bootstrap}/bin/aarch64-unknown-linux-gnu-gnatmake -c helloAda.adb
+    #   # $GNATMAKE helloada.adb
+    #   #${buildPackages.gnat-bootstrap}/bin/aarch64-unknown-linux-gnu-gnatmake -c helloada.adb
     #   echo test1
-    #   #aarch64-unknown-linux-gnu-cc -o helloC -c helloAda.adb
+    #   #aarch64-unknown-linux-gnu-cc -o helloC -c helloada.adb
     #   runHook postBuild
 
     # buildPhase = ''
@@ -170,21 +150,21 @@ stdenv.mkDerivation rec {
     #   echo $(pwd)
     #   echo $(ls ${buildPackages.gnat.cc}/bin/)
     #   #${buildPackages.gnat.cc}/bin/${stdenv.cc.targetPrefix}gcc --help
-    #   #${buildPackages.gnat.cc}/bin/${stdenv.cc.targetPrefix}gcc -c helloAda.adb
-    #   # ${buildPackages.gnat.cc}/bin/${stdenv.cc.targetPrefix}gnatbind helloAda
+    #   #${buildPackages.gnat.cc}/bin/${stdenv.cc.targetPrefix}gcc -c helloada.adb
+    #   # ${buildPackages.gnat.cc}/bin/${stdenv.cc.targetPrefix}gnatbind helloada
     #   echo $(ls .)
     #   echo $(which gnat)
-    #   #gcc -c helloAda.adb
+    #   #gcc -c helloada.adb
     #   echo $(which gnatmake)
-    #   echo $($(which gnatmake) helloAda.adb)
+    #   echo $($(which gnatmake) helloada.adb)
     #   echo test134
-    #   gnat make helloAda.adb
+    #   gnat make helloada.adb
     #   echo test321
-    #   # ${stdenv.cc.targetPrefix}gnatmake helloAda.adb
-    #   #${stdenv.cc.targetPrefix}gnatbind helloAda.ali
-    #   #${stdenv.cc.targetPrefix}gnatlink helloAda.ali
+    #   # ${stdenv.cc.targetPrefix}gnatmake helloada.adb
+    #   #${stdenv.cc.targetPrefix}gnatbind helloada.ali
+    #   #${stdenv.cc.targetPrefix}gnatlink helloada.ali
     #   echo $(ls .)
     #   runHook postBuild
-    #   ${stdenv.cc.targetPrefix}gnatmake helloAda.adb
+    #   ${stdenv.cc.targetPrefix}gnatmake helloada.adb
     # '';
     # '';

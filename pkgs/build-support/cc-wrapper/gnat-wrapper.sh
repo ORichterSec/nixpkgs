@@ -151,7 +151,11 @@ case "$(basename $0)x" in
     "gnatmakex")
         extraBefore=("--GNATBIND=@out@/bin/gnatbind" "--GNATLINK=@out@/bin/gnatlink")
         extraAfter=($NIX_GNATFLAGS_COMPILE_@suffixSalt@ -cargs $NIX_GNATMAKE_CARGS_@suffixSalt@)
+        echo "test------>@out@/bin/gnatbind"
+        echo "nix_gnatflags:$NIX_GNATFLAGS_COMPILE_@suffixSalt@ -cargs $NIX_GNATMAKE_CARGS_@suffixSalt@"
         ;;
+        *)
+        echo "default: $(basename $0)x | \$0:$0"
 esac
 
 # As a very special hack, if the arguments are just `-v', then don't
@@ -164,7 +168,7 @@ if [ "$*" = -v ]; then
 fi
 
 # Optionally print debug info.
-if (( "${NIX_DEBUG:-0}" >= 1 )); then
+if true; then
     # Old bash workaround, see ld-wrapper for explanation.
     echo "extra flags before to @prog@:" >&2
     printf "  %q\n" ${extraBefore+"${extraBefore[@]}"}  >&2
@@ -176,6 +180,7 @@ fi
 
 PATH="$path_backup"
 # Old bash workaround, see above.
+echo "echo of prog:@prog@"
 exec @prog@ \
     ${extraBefore+"${extraBefore[@]}"} \
     ${params+"${params[@]}"} \
