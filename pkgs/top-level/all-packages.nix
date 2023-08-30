@@ -32381,6 +32381,8 @@ with pkgs;
 
   mt32emu-smf2wav = callPackage ../applications/audio/munt/mt32emu-smf2wav.nix { };
 
+  net-test = callPackage ../applications/misc/net-test { };
+
   noson = libsForQt5.callPackage ../applications/audio/noson { };
 
   offpunk = callPackage ../applications/networking/browsers/offpunk { };
